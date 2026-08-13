@@ -1,0 +1,108 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(0, 0, 0, 0.54);
+  backdrop-filter: blur(2px);
+}
+
+.palette {
+  width: min(620px, calc(100vw - 48px));
+  height: fit-content;
+  max-height: 68vh;
+  overflow: hidden;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius);
+  background: var(--bd-surface-raised);
+  box-shadow: var(--bd-shadow-lg);
+}
+
+.searchRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--bd-border);
+  color: var(--bd-text-dim);
+}
+
+.searchRow input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--bd-text);
+  font-family: var(--bd-font-serif);
+  font-size: 16px;
+}
+
+.searchRow kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: 4px;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+}
+
+.results {
+  max-height: calc(68vh - 52px);
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.results button {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.results button.active {
+  background: var(--bd-accent-wash);
+  color: var(--bd-text);
+  box-shadow: inset 2px 0 0 var(--bd-accent);
+}
+
+.kind {
+  color: var(--bd-entity-color, var(--bd-accent));
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.results strong {
+  overflow: hidden;
+  font-family: var(--bd-font-sans);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.results small {
+  overflow: hidden;
+  color: var(--bd-text-faint);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noResults {
+  padding: 28px;
+  color: var(--bd-text-dim);
+  text-align: center;
+}

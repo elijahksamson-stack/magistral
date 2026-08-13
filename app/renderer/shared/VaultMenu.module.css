@@ -1,0 +1,246 @@
+.root {
+  position: relative;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-surface-raised);
+  color: rgba(255, 255, 255, 0.82);
+  font-family: var(--bd-font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--bd-accent-dim);
+  color: var(--bd-text-bright);
+  background: var(--bd-surface-hover);
+}
+
+.triggerName {
+  overflow: hidden;
+  max-width: 160px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bd-warning);
+}
+
+.caret {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 9px;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 300px;
+  padding: 5px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius);
+  background: var(--bd-surface-raised);
+  box-shadow: var(--bd-shadow-lg);
+}
+
+.list {
+  margin: 0 0 4px;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row,
+.rowConfirming {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--bd-radius-sm);
+}
+
+.row:hover {
+  background: var(--bd-accent-wash);
+  box-shadow: inset 2px 0 0 var(--bd-accent);
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--bd-font-sans);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.check {
+  flex: 0 0 12px;
+  color: var(--bd-signal);
+  font-size: 11px;
+}
+
+.name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: var(--bd-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+}
+
+/* Destructive, so it stays quiet until the row is hovered. */
+/*
+ * Visible at rest, unlike .remove below.
+ *
+ * Delete hides until you hover the row, which is right for a destructive
+ * action. Rename is not destructive and it is something people go looking for,
+ * so hiding it repeats the group-rename bug: the control existed, was revealed
+ * only on hover, and was reported as missing.
+ */
+.rename {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.42);
+  font: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.row:hover .rename,
+.rename:focus-visible {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.rename:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+
+.remove {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.row:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.remove:hover:not(:disabled) {
+  background: rgba(226, 106, 106, 0.18);
+  color: #ff9b9b;
+}
+
+.remove:disabled {
+  cursor: not-allowed;
+}
+
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(226, 106, 106, 0.35);
+  border-radius: 6px;
+  background: rgba(226, 106, 106, 0.09);
+}
+
+.confirmText {
+  flex: 1 1 auto;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11.5px;
+}
+
+.confirm button {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.confirmDelete {
+  border-color: rgba(226, 106, 106, 0.5) !important;
+  color: #ff9b9b !important;
+}
+
+.confirmDelete:hover {
+  background: rgba(226, 106, 106, 0.2) !important;
+}
+
+.create {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-top: 1px solid var(--bd-border);
+  border-radius: 0 0 6px 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--bd-font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.create:hover {
+  background: var(--bd-accent-wash);
+  color: var(--bd-text-bright);
+}
+
+.create span[aria-hidden] {
+  color: var(--bd-accent);
+}

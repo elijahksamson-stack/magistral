@@ -1,0 +1,172 @@
+.root {
+  position: relative;
+}
+
+/*
+ * Always legible as a button.
+ *
+ * This used to sit at opacity .25 with no border and no label, which made the
+ * app's signature feature invisible: it was reported as "there's no Claude in
+ * the editor" while the button was working perfectly. Calm is worth something,
+ * but not at the cost of the reader never finding the control.
+ */
+.trigger {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: rgba(20, 23, 25, 0.78);
+  color: var(--bd-signal);
+  font: inherit;
+  cursor: pointer;
+  opacity: 0.42;
+  transition: opacity var(--bd-transition), color var(--bd-transition),
+    border-color var(--bd-transition), background var(--bd-transition),
+    transform var(--bd-transition);
+}
+
+:global(article):hover .trigger,
+:global(article):focus-within .trigger {
+  opacity: 1;
+  border-color: var(--bd-border-strong);
+}
+
+.trigger:hover {
+  opacity: 1;
+  color: var(--bd-text-bright);
+  border-color: var(--bd-signal);
+  background: var(--bd-signal-wash);
+  box-shadow: 0 0 18px rgba(184, 219, 76, 0.12);
+  transform: translateY(-1px) scale(1.04);
+}
+
+.trigger:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--bd-accent);
+  outline-offset: 1px;
+}
+
+.trigger:disabled {
+  opacity: 1;
+  color: var(--bd-signal);
+  cursor: progress;
+}
+
+/*
+ * A cell with a run in flight.
+ *
+ * Per-cell, never global: every Cell holds its own run state, so several cells
+ * can be working at once and each says so on its own. A single app-wide
+ * "thinking" indicator would claim all of them were busy when one was.
+ *
+ * Two signals, because one is not enough on a 26px control — the glyph turns,
+ * and the button's edge breathes. The turn alone reads as a rendering glitch at
+ * this size; the glow alone is easy to miss in peripheral vision.
+ */
+.busy {
+  border-color: var(--bd-signal);
+  background: var(--bd-signal-wash);
+  animation: sparkle-breathe 1.9s ease-in-out infinite;
+}
+
+.busy .glyph {
+  animation: sparkle-spin 2.4s linear infinite;
+}
+
+@keyframes sparkle-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sparkle-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--bd-signal-wash);
+  }
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+/*
+ * Motion is decoration here, not information — the button is also disabled,
+ * relabelled "Claude is working", and shows a progress cursor. Someone who
+ * asked the OS for less motion loses nothing by having it stand still.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .busy,
+  .busy .glyph {
+    animation: none;
+  }
+}
+
+.glyph {
+  display: block;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.menu {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  z-index: 20;
+  min-width: 264px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-surface-raised);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.scope {
+  margin: 2px 8px 5px;
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--bd-accent);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border: none;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text);
+  font-family: var(--bd-font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--bd-transition);
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--bd-accent-wash);
+  box-shadow: inset 2px 0 0 var(--bd-accent);
+  outline: none;
+}
+
+.itemLabel {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.itemHint {
+  font-family: var(--bd-font-serif);
+  font-size: 12px;
+  color: var(--bd-text-faint);
+  line-height: 1.4;
+}

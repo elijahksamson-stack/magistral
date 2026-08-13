@@ -1,0 +1,105 @@
+/**
+ * Magistral workstation tokens.
+ *
+ * Magistral is a context workshop for research writing. The
+ * shared grammar is black ink, warm paper-white type and hairline rules; cyan
+ * identifies live structure and selection while scarce lime marks AI actions
+ * and newly changed state. Prose remains editorial, chrome stays technical.
+ */
+
+:root {
+  /* -- surfaces: darkest at the canvas, lifting toward interactive chrome -- */
+  --bd-canvas: #090a0b;
+  --bd-surface-sunken: #070809;
+  --bd-surface: #0e1011;
+  --bd-surface-raised: #141719;
+  --bd-surface-hover: #192023;
+  --bd-surface-active: #20282b;
+
+  /* -- lines -------------------------------------------------------------- */
+  --bd-border: #202426;
+  --bd-border-strong: #343b3e;
+  --bd-border-focus: #45c6d4;
+
+  /* -- text: four steps, enough to build hierarchy without shouting ------- */
+  --bd-text-bright: #f3f1eb;
+  --bd-text: #dfddd7;
+  --bd-text-muted: #b1b0aa;
+  --bd-text-dim: #858a88;
+  --bd-text-faint: #5d6463;
+
+  /* -- accent: the graph's link colour, reused for selection -------------- */
+  --bd-accent: #45c6d4;
+  --bd-accent-bright: #83dde5;
+  --bd-accent-dim: #246873;
+  --bd-accent-wash: rgba(69, 198, 212, 0.11);
+  --bd-accent-soft: rgba(69, 198, 212, 0.18);
+  --bd-signal: #b8db4c;
+  --bd-signal-wash: rgba(184, 219, 76, 0.1);
+  --bd-link: #67cfdb;
+  --bd-link-muted: #6b979b;
+
+  /* -- brand signature ---------------------------------------------------- */
+  --bd-brand-paper: var(--bd-text-bright);
+  --bd-brand-context: var(--bd-accent);
+  --bd-brand-commit: var(--bd-signal);
+  --bd-brand-rule: linear-gradient(90deg, var(--bd-brand-context), var(--bd-brand-commit));
+
+  /* -- semantics ---------------------------------------------------------- */
+  --bd-success: #78cf9b;
+  --bd-warning: #d6ae55;
+  --bd-warn: var(--bd-warning);
+  --bd-danger: #d97a7a;
+  --bd-thinking: #8a7fb8;
+
+  /* -- node kinds: one hue per NodeKind, shared by graph and editor -------- */
+  --bd-node-concept: #7aa2d6;
+  --bd-node-entity: #6fbf8b;
+  --bd-node-claim: #d8a657;
+  --bd-node-question: #b48ead;
+  --bd-node-source: #7fb8c4;
+  --bd-node-metric: #c98f6f;
+
+  /* Three voices: interface, authored reasoning, and machine/system state. */
+  --bd-font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --bd-font-sans: 'Avenir Next', Avenir, Inter, 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --bd-font-display: 'Avenir Next', Avenir, Inter, 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --bd-font-mono: 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+
+  /*
+   * A fourth voice, for the wordmark and nothing else — a logotype is not
+   * interface text. Geometric on purpose: circular bowls and a single-storey
+   * 'a' answer the mark's constructed, 45°-cut M. Century Gothic is the
+   * nearest geometric on Windows, which the build also targets.
+   */
+  --bd-font-brand: Futura, 'Century Gothic', 'Avenir Next', Avenir, sans-serif;
+
+  --bd-text-xs: 11px;
+  --bd-text-sm: 12px;
+  --bd-text-base: 13px;
+  --bd-text-md: 15px;
+  --bd-text-lg: 18px;
+
+  --bd-leading-tight: 1.35;
+  --bd-leading-normal: 1.6;
+
+  /* -- space: 4px base ---------------------------------------------------- */
+  --bd-space-1: 4px;
+  --bd-space-2: 8px;
+  --bd-space-3: 12px;
+  --bd-space-4: 16px;
+  --bd-space-5: 24px;
+  --bd-space-6: 32px;
+
+  --bd-radius-sm: 2px;
+  --bd-radius: 4px;
+  --bd-radius-lg: 6px;
+
+  --bd-shadow: 0 8px 22px rgba(0, 0, 0, 0.46);
+  --bd-shadow-lg: 0 18px 52px rgba(0, 0, 0, 0.68);
+
+  /* -- chrome ------------------------------------------------------------- */
+  --bd-tabbar-height: 58px;
+  --bd-statusbar-height: 28px;
+  --bd-transition: 170ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}

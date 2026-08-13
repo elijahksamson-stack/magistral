@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onthemoney.ai/schemas/braindump/graph-v1.json",
+  "title": "Magistral Knowledge Graph v1",
+  "description": "Canonical .json export format. Mirrors shared/types/graph.ts exactly.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "createdAt",
+    "updatedAt",
+    "cells",
+    "nodes",
+    "edges",
+    "view"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "cells": { "type": "array", "items": { "$ref": "#/$defs/cell" } },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "view": { "$ref": "#/$defs/view" }
+  },
+  "$defs": {
+    "nodeKind": {
+      "enum": ["concept", "entity", "claim", "question", "source", "metric", "group"]
+    },
+    "relationKind": {
+      "enum": [
+        "relates_to",
+        "causes",
+        "part_of",
+        "contradicts",
+        "supports",
+        "depends_on",
+        "instance_of",
+        "mentions",
+        "affects",
+        "affected_by"
+      ]
+    },
+    "cell": {
+      "type": "object",
+      "required": ["id", "order", "markdown", "createdAt", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer", "minimum": 0 },
+        "markdown": { "type": "string" },
+        "claudeSessionId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "normalizedLabel",
+        "kind",
+        "cellIds",
+        "x",
+        "y",
+        "pinned",
+        "degree",
+        "centrality",
+        "cluster"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "normalizedLabel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dedup key. Lowercased, whitespace-collapsed, punctuation-stripped."
+        },
+        "kind": { "$ref": "#/$defs/nodeKind" },
+        "cellIds": { "type": "array", "items": { "type": "string" } },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "pinned": { "type": "boolean" },
+        "degree": { "type": "integer", "minimum": 0 },
+        "centrality": { "type": "number", "minimum": 0, "maximum": 1 },
+        "cluster": { "type": "integer", "minimum": 0 },
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "note": { "type": "string" },
+        "groupId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The group node this one sits inside. A node belongs to at most one."
+        },
+        "subConcepts": {
+          "description": "The cell's [[links]] after the first, each with the line it was written on.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/subConcept" }
+        }
+      }
+    },
+    "subConcept": {
+      "description": "A bare string is the pre-note shape, still accepted so vaults written before notes existed keep opening. The C++ core reads both.",
+      "anyOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "required": ["label"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "note": {
+              "type": "string",
+              "description": "The line this link appeared on, flattened to prose."
+            }
+          }
+        }
+      ]
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "source", "target", "relation", "weight", "directed"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "relation": { "$ref": "#/$defs/relationKind" },
+        "weight": { "type": "number", "exclusiveMinimum": 0 },
+        "directed": { "type": "boolean" },
+        "note": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "The author's description of what this relationship is."
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "required": ["zoom", "panX", "panY", "layout"],
+      "additionalProperties": false,
+      "properties": {
+        "zoom": { "type": "number", "exclusiveMinimum": 0 },
+        "panX": { "type": "number" },
+        "panY": { "type": "number" },
+        "layout": {
+          "type": "object",
+          "required": ["kind", "params"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "force" },
+            "params": {
+              "type": "object",
+              "required": [
+                "repulsion",
+                "attraction",
+                "gravity",
+                "damping",
+                "theta",
+                "linkDistance"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "repulsion": { "type": "number" },
+                "attraction": { "type": "number" },
+                "gravity": { "type": "number" },
+                "damping": { "type": "number", "minimum": 0, "maximum": 1 },
+                "theta": { "type": "number", "minimum": 0 },
+                "linkDistance": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extractionResult": {
+      "description": "What the ✦ Extract Concepts action must return. Labels, not ids.",
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "kind"],
+            "additionalProperties": false,
+            "properties": {
+              "label": { "type": "string", "minLength": 1 },
+              "kind": { "$ref": "#/$defs/nodeKind" },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "target", "relation"],
+            "additionalProperties": false,
+            "properties": {
+              "source": { "type": "string", "minLength": 1 },
+              "target": { "type": "string", "minLength": 1 },
+              "relation": { "$ref": "#/$defs/relationKind" },
+              "weight": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

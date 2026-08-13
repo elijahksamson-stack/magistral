@@ -1,0 +1,45 @@
+.heading {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: min(100%, 300px);
+  max-width: 100%;
+  column-gap: clamp(32px, 4vw, 52px);
+  row-gap: 5px;
+}
+
+/*
+ * Neither item shrinks to manufacture a fit. If their real widths plus the
+ * protected gap do not fit, flex-wrap moves metrics to a clean second line.
+ * Only a title wider than the heading itself is shortened.
+ */
+.title {
+  flex: 0 0 auto;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--bd-text-bright);
+  font-family: var(--bd-font-serif);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metrics {
+  flex: 0 0 auto;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.075em;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

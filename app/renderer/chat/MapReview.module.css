@@ -1,0 +1,206 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0 0.9rem 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--bd-accent, #a78bfa) 34%, transparent);
+  border-radius: var(--bd-radius-sm);
+  background: color-mix(in srgb, var(--bd-accent, #a78bfa) 7%, var(--bd-surface, #141418));
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--bd-font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--bd-text-bright, #ececf4);
+}
+
+.summary {
+  margin: 0;
+  font-family: var(--bd-font-mono);
+  font-size: 0.58rem;
+  color: var(--bd-text-faint, #5c5c6b);
+}
+
+.rationale {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--bd-text, #d8d8e0);
+  font-family: var(--bd-font-serif);
+}
+
+.selectAll {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--bd-accent, #a78bfa);
+  font: inherit;
+  font-size: 0.66rem;
+  cursor: pointer;
+}
+
+.link:disabled {
+  color: var(--bd-text-faint, #5c5c6b);
+  cursor: default;
+}
+
+.link:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row,
+.rowMuted {
+  border-radius: 5px;
+}
+
+.row:hover,
+.rowMuted:hover {
+  background: color-mix(in srgb, var(--bd-text, #d8d8e0) 5%, transparent);
+}
+
+/* Unchecked rows stay readable — they are still part of what was proposed. */
+.rowMuted {
+  opacity: 0.45;
+}
+
+.rowLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  cursor: pointer;
+}
+
+.checkbox {
+  margin-top: 0.2rem;
+  accent-color: var(--bd-signal);
+  flex: none;
+}
+
+.rowBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: 0.73rem;
+  color: var(--bd-text-bright, #ececf4);
+  line-height: 1.4;
+}
+
+.rowDetail {
+  font-size: 0.62rem;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  color: var(--bd-text-faint, #5c5c6b);
+}
+
+.rowNote {
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--bd-text-dim, #8b8b9c);
+}
+
+.rejectedBlock {
+  font-size: 0.66rem;
+  color: var(--bd-text-faint, #5c5c6b);
+}
+
+.rejectedBlock summary {
+  cursor: pointer;
+}
+
+.rejected {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.35rem 0 0;
+  padding: 0 0 0 0.9rem;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: var(--bd-text-faint, #5c5c6b);
+}
+
+.rejectedSubject {
+  color: var(--bd-text-dim, #8b8b9c);
+}
+
+.actions {
+  display: flex;
+  gap: 0.45rem;
+  padding-top: 0.15rem;
+}
+
+.primary,
+.secondary {
+  padding: 0.35rem 0.7rem;
+  border-radius: 5px;
+  font-family: var(--bd-font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid transparent;
+  background: var(--bd-signal);
+  color: #16121f;
+  font-weight: 600;
+}
+
+.secondary {
+  border: 1px solid var(--bd-border, #26262e);
+  background: transparent;
+  color: var(--bd-text-dim, #8b8b9c);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--bd-accent, #a78bfa) 85%, #fff);
+}
+
+.secondary:not(:disabled):hover {
+  border-color: var(--bd-text-faint, #5c5c6b);
+  color: var(--bd-text, #d8d8e0);
+}
+
+.empty {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--bd-text-dim, #8b8b9c);
+}

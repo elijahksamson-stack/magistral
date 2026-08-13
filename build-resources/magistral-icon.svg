@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Magistral">
+  <title>Magistral</title>
+  <rect width="1024" height="1024" fill="#090a0b"/>
+  <!--
+    The same contour as app/renderer/assets/magistral-mark.svg, scaled 6.5x and
+    centred: 780x611 on a 1024 canvas, which clears the macOS rounded mask.
+    Keep the two files in step — the raster icons are cut from this one.
+  -->
+  <g transform="translate(122 206) scale(6.5)">
+    <path fill="#f3f1eb"
+          d="M10 92 L0 82 L0 12 L6 6 L60 60 L114 6 L120 12 L120 82 L110 92 L96 92 L96 58 L60 94 L24 58 L24 92 Z"/>
+  </g>
+</svg>

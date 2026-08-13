@@ -1,0 +1,71 @@
+.lockup {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--bd-brand-paper);
+}
+
+/* The silhouette is the asset. It gets space, not a decorative container. */
+.glyph {
+  display: grid;
+  width: 44px;
+  height: 40px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--bd-brand-paper);
+}
+
+.mark {
+  display: block;
+  width: 38px;
+  height: auto;
+  overflow: visible;
+}
+
+.markBody {
+  fill: currentColor;
+}
+
+.type {
+  display: grid;
+  gap: 4px;
+  min-width: 139px;
+  line-height: 1;
+}
+
+.name {
+  color: var(--bd-brand-paper);
+  font-family: var(--bd-font-brand);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.period {
+  color: var(--bd-brand-commit);
+}
+
+.descriptor {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--bd-text-dim);
+  font-family: var(--bd-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.145em;
+  white-space: nowrap;
+}
+
+.descriptor::before {
+  content: '';
+  width: 15px;
+  height: 1px;
+  flex: 0 0 auto;
+  background: var(--bd-brand-commit);
+}
+
+@media (max-width: 980px) {
+  .type {
+    display: none;
+  }
+}

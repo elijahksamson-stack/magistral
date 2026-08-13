@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+
+# native build output (node-gyp)
+build/
+!build-resources/
+
+# prebuilt native addon (prebuildify layout: bin/<platform>-<abi>/*.node)
+bin/
+
+# electron-vite output
+out/
+
+# electron-builder output
+release/
+
+# emscripten output (web phase)
+bindings/wasm/out/
+
+# local vaults — user data never belongs in the repo
+vaults/
+
+# os / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# logs
+*.log
+npm-debug.log*
+
+# env
+.env
+.env.local

@@ -1,0 +1,110 @@
+{
+  "name": "braindump",
+  "version": "0.1.2",
+  "description": "Magistral — a local-first context builder for organizing human and LLM knowledge",
+  "author": "Eli Samson",
+  "license": "MIT",
+  "private": true,
+  "main": "out/main/index.js",
+  "scripts": {
+    "postinstall": "electron-builder install-app-deps",
+    "build:native": "node-gyp rebuild",
+    "rebuild:electron": "electron-rebuild -f -w braindump",
+    "build:core-tests": "mkdir -p build && clang++ -std=c++17 -O2 -Wall -Wextra -Icore/include -Icore/tests/vendor core/src/*.cpp core/tests/*.cpp -o build/core_tests",
+    "test:core": "npm run build:core-tests && ./build/core_tests",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "dist": "npm run build && electron-builder --mac --x64",
+    "verify": "npm run test:core && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.9.0",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.8",
+    "mammoth": "^1.12.0",
+    "node-addon-api": "^8.9.1",
+    "officeparser": "^7.5.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "word-extractor": "^1.0.4",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "jsdom": "^29.1.1",
+    "node-gyp": "^13.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.10"
+  },
+  "gypfile": true,
+  "build": {
+    "appId": "ai.onthemoney.braindump",
+    "productName": "Magistral",
+    "copyright": "Copyright © 2026 Eli Samson",
+    "directories": {
+      "output": "release",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "out/**/*",
+      "build/Release/*.node",
+      "!node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "build/Release/*.node"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/knowledge",
+        "to": "knowledge"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "dir"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build-resources/icon.icns",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "dmg": {
+      "title": "Magistral ${version}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "icon": "build-resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Magistral"
+    }
+  }
+}

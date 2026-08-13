@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 94" role="img" aria-label="Magistral">
+  <title>Magistral</title>
+  <!--
+    One closed contour. Every edge is vertical, horizontal, or 45° — nothing else
+    sits on the lattice, which is what makes the mark read as cut rather than drawn.
+
+    The four extremities are sliced by an implied rotated square,
+    |x-60| + |y-47| = 95, so every terminal ends on a 45° cut. The square itself is
+    never drawn; only its cuts are visible.
+
+    The valley overshoots the feet by 2 units — the usual optical correction that
+    stops a pointed apex from looking short.
+
+    Stems and diagonals carry the same weight: stems 24 wide, diagonals 34/√2 = 24.04.
+  -->
+  <path fill="#f3f1eb"
+        d="M10 92 L0 82 L0 12 L6 6 L60 60 L114 6 L120 12 L120 82 L110 92 L96 92 L96 58 L60 94 L24 58 L24 92 Z"/>
+</svg>

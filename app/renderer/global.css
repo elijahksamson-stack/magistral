@@ -1,0 +1,99 @@
+/**
+ * Global reset and base chrome. Everything else is a CSS Module.
+ * Tokens come from shared/theme.css, imported first by main.tsx.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bd-canvas);
+  color: var(--bd-text);
+  font-family: var(--bd-font-sans);
+  font-size: var(--bd-text-base);
+  line-height: var(--bd-leading-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  letter-spacing: 0.002em;
+  overflow: hidden;
+}
+
+/* This is a desktop app, not a document: nothing drags or rubber-bands. */
+body {
+  overscroll-behavior: none;
+  user-select: none;
+  cursor: default;
+}
+
+input,
+textarea,
+[contenteditable='true'],
+.selectable {
+  user-select: text;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+select {
+  font-family: var(--bd-font-sans);
+}
+
+:focus-visible {
+  outline: 1px solid var(--bd-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--bd-accent-wash);
+}
+
+/* Dark, thin, and out of the way. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 0;
+  background-clip: content-box;
+  background-color: var(--bd-border-strong);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bd-accent-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

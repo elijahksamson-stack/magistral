@@ -1,0 +1,366 @@
+.root {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+  padding: 12px 24px;
+  border-bottom: 1px solid color-mix(in srgb, var(--bd-border) 58%, transparent);
+  /*
+   * --bd-cell-accent is this cell's category colour, shared with the canvas
+   * and Chat references. Cells no node owns leave it
+   * unset and fall through to transparent.
+   */
+  border-left: 2px solid color-mix(in srgb, var(--bd-cell-accent, transparent) 55%, transparent);
+  transition: border-color var(--bd-transition), background var(--bd-transition),
+    transform var(--bd-transition);
+}
+
+.noLlm {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/*
+ * Raised while in use, so the ✦ menu is not painted over.
+ *
+ * The menu is absolutely positioned inside this cell at z-index 20, but the
+ * transform below makes the cell a stacking context, which traps that z-index
+ * inside it. The cell then paints in the same layer as every later cell's
+ * positioned ✦ root — and later means on top, so the menu came out with the
+ * rows beneath showing through. It reads as transparency; it is overpaint.
+ * :focus-within covers the keyboard path, where the cell is never hovered.
+ */
+.root:hover,
+.root:focus-within {
+  position: relative;
+  z-index: 5;
+}
+
+.root:hover {
+  background: linear-gradient(90deg, var(--bd-accent-wash), transparent 70%);
+}
+
+/*
+ * The aura of the cell being edited, in that cell's category colour rather than a
+ * single global signal — opening a cell should look like lighting up the dot it
+ * belongs to. Falls back to the signal colour for a cell no node owns.
+ */
+.active {
+  border-left-color: var(--bd-cell-accent, var(--bd-accent));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bd-cell-accent, var(--bd-accent)) 13%, transparent),
+    transparent 72%
+  );
+}
+
+.related {
+  background: linear-gradient(90deg, var(--bd-accent-wash), transparent 72%);
+}
+
+.gutter {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
+}
+
+.body {
+  min-width: 0;
+  max-width: var(--bd-measure);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.editor {
+  min-height: calc(var(--bd-font-size, 15px) * var(--bd-line-height, 1.7));
+  cursor: text;
+}
+
+/*
+ * The two cell actions, together at the right of the bar: add below, then
+ * delete. They used to sit at opposite ends of the row — delete beside the
+ * title, add in its own trailing column — which put a destructive control and
+ * a constructive one as far apart as the layout allowed while reading as one
+ * toolbar.
+ */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.railButton {
+  width: 22px;
+  height: 22px;
+  opacity: 0;
+  transition: opacity var(--bd-transition), border-color var(--bd-transition),
+    color var(--bd-transition), background var(--bd-transition);
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--bd-transition), border-color var(--bd-transition);
+}
+
+.railButton:hover {
+  color: var(--bd-text);
+  border-color: var(--bd-border-strong);
+}
+
+.railButton:focus-visible {
+  outline: 2px solid var(--bd-accent);
+  outline-offset: 1px;
+}
+
+.pin {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.pinActive {
+  color: var(--bd-warning, #d8a657);
+  opacity: 1;
+}
+
+.error {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--bd-removed-text);
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-removed-bg);
+  color: var(--bd-removed-text);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.dismiss {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* -- cell chrome: collapse, title, delete ---------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin-bottom: 2px;
+}
+
+.entityMark {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid color-mix(in srgb, var(--bd-cell-accent, var(--bd-text-faint)) 78%, #090a0b);
+  border-radius: 50%;
+  background: var(--bd-surface-sunken);
+  color: var(--bd-cell-accent, var(--bd-text-faint));
+  font-family: var(--bd-font-sans);
+  font-size: 8px;
+  line-height: 1;
+}
+
+.mapping,
+.mappingUnlinked {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mapping::before,
+.mappingUnlinked::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--bd-cell-accent, var(--bd-accent));
+  vertical-align: 1px;
+}
+
+.mappingUnlinked::before {
+  border: 1px solid var(--bd-text-faint);
+  background: transparent;
+}
+
+.disclosure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-sans);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.disclosure:hover {
+  color: var(--bd-text);
+  background: var(--bd-surface-hover);
+}
+
+.chevron {
+  flex: 0 0 auto;
+  font-size: 9px;
+  color: var(--bd-accent);
+}
+
+.cellTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--bd-font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 620px) {
+  .mapping,
+  .mappingUnlinked {
+    display: none;
+  }
+}
+
+/* Only visible while collapsed — the gist that saves you expanding it. */
+.summary {
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-serif);
+  font-size: 12px;
+  opacity: 0.82;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--bd-transition), color var(--bd-transition),
+    background var(--bd-transition);
+}
+
+/* Destructive, so it stays out of the way until the cell is engaged with —
+   but it is always reachable by keyboard. */
+.root:hover .delete,
+.root:focus-within .delete,
+.delete:focus-visible,
+.root:hover .railButton,
+.root:focus-within .railButton,
+.railButton:focus-visible {
+  opacity: 1;
+}
+
+.root:hover .pin,
+.root:focus-within .pin,
+.pin:focus-visible {
+  opacity: 1;
+}
+
+.delete:hover {
+  background: rgba(226, 106, 106, 0.16);
+  color: #ff9b9b;
+}
+
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 8px;
+  padding: 9px 12px;
+  border: 1px solid rgba(226, 106, 106, 0.35);
+  border-radius: var(--bd-radius);
+  background: rgba(226, 106, 106, 0.08);
+}
+
+.confirmText {
+  flex: 1 1 auto;
+  margin: 0;
+  color: var(--bd-text);
+  font-size: 12px;
+}
+
+.confirmActions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.confirmActions button {
+  padding: 5px 11px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.confirmActions button:hover {
+  border-color: var(--bd-accent);
+}
+
+.confirmDelete {
+  border-color: rgba(226, 106, 106, 0.5) !important;
+  color: #ff9b9b !important;
+}
+
+.confirmDelete:hover {
+  background: rgba(226, 106, 106, 0.18) !important;
+  border-color: #ff9b9b !important;
+}
+
+/* A collapsed cell is a single row: no editor, no padding to spare. */
+.collapsed .editor {
+  display: none;
+}
+
+.collapsed {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}

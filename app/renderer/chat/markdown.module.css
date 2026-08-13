@@ -1,0 +1,127 @@
+/*
+ * Rendered model output. Every custom property falls back to a local value, so
+ * these styles hold on their own and defer to app-level tokens when they exist.
+ */
+
+.paragraph {
+  margin: 0 0 0.7rem;
+  line-height: 1.62;
+  color: var(--bd-text, #d8d8e0);
+  font-family: var(--bd-font-serif, Georgia, serif);
+  font-size: 0.94rem;
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.heading {
+  margin: 1rem 0 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  color: var(--bd-text-bright, #ececf4);
+  font-family: var(--bd-font-display);
+}
+
+.heading:first-child {
+  margin-top: 0;
+}
+
+.list {
+  margin: 0 0 0.7rem;
+  padding-left: 1.15rem;
+  line-height: 1.58;
+  color: var(--bd-text, #d8d8e0);
+  font-family: var(--bd-font-serif, Georgia, serif);
+  font-size: 0.9rem;
+}
+
+.list li {
+  margin-bottom: 0.22rem;
+}
+
+.list li::marker {
+  color: var(--bd-text-faint, #5c5c6b);
+}
+
+.quote {
+  margin: 0 0 0.7rem;
+  padding: 0.1rem 0 0.1rem 0.7rem;
+  border-left: 2px solid var(--bd-border-strong, #33333f);
+  color: var(--bd-text-dim, #8a8a99);
+  font-style: normal;
+}
+
+.rule {
+  margin: 0.9rem 0;
+  border: 0;
+  border-top: 1px solid var(--bd-border, #26262e);
+}
+
+.pre {
+  margin: 0 0 0.7rem;
+  padding: 0.6rem 0.7rem;
+  overflow-x: auto;
+  border: 1px solid var(--bd-border, #26262e);
+  border-radius: 5px;
+  background: var(--bd-canvas, #0d0d0f);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.pre code {
+  font-family: var(--bd-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--bd-text-dim, #8a8a99);
+  white-space: pre;
+}
+
+.code {
+  padding: 0.08em 0.34em;
+  border-radius: 3px;
+  background: var(--bd-surface-sunken, #101014);
+  font-family: var(--bd-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.82em;
+  color: var(--bd-text-code, #b9c2d8);
+}
+
+/* A graph node the author can jump to. */
+.nodeLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28em;
+  padding: 0.02em 0.16em;
+  margin: 0 -0.16em;
+  border: 0;
+  border-radius: 1px;
+  background: none;
+  font: inherit;
+  color: color-mix(in srgb, var(--bd-entity-color, var(--bd-link)) 72%, var(--bd-text));
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nodeLink:hover,
+.nodeLink:focus-visible {
+  background: color-mix(in srgb, var(--bd-entity-color, var(--bd-link)) 13%, transparent);
+  outline: none;
+  box-shadow: inset 0 -1px 0 var(--bd-accent);
+}
+
+.nodeLink[data-selection='selected'] {
+  background: color-mix(in srgb, var(--bd-entity-color, var(--bd-accent)) 16%, transparent);
+  color: var(--bd-text-bright);
+  box-shadow: inset 0 -1px 0 var(--bd-accent);
+}
+
+.nodeGlyph {
+  color: var(--bd-entity-color, var(--bd-accent));
+  font-family: var(--bd-font-sans);
+  font-size: 0.62em;
+  line-height: 1;
+}
+
+/* Same label, but nothing to select — no vault open. */
+.nodeLabel {
+  color: var(--bd-link-muted, #7f8fb5);
+}

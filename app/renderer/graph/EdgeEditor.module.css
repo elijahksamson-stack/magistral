@@ -1,0 +1,182 @@
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+
+.editor {
+  position: absolute;
+  z-index: 21;
+  width: 236px;
+  padding: 10px 12px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius);
+  background: var(--bd-surface-raised);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+}
+
+.sentence {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 10px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.node {
+  overflow: hidden;
+  color: var(--bd-text-bright);
+  font-family: var(--bd-font-sans);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verb {
+  color: var(--bd-accent);
+  font-family: var(--bd-font-mono);
+  font-size: 11px;
+  padding-left: 10px;
+}
+
+.flip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.flip:hover {
+  border-color: var(--bd-accent);
+  color: #fff;
+}
+
+.flip span[aria-hidden] {
+  color: var(--bd-accent);
+  font-size: 13px;
+}
+
+.heading {
+  margin: 0 0 5px;
+  color: rgba(255, 255, 255, 0.34);
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.options {
+  margin: 0 0 10px;
+  padding: 0;
+  max-height: 210px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.option,
+.optionActive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.optionActive {
+  background: var(--bd-accent-wash);
+  box-shadow: inset 2px 0 0 var(--bd-accent);
+  color: #fff;
+}
+
+.option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.check {
+  flex: 0 0 11px;
+  color: var(--bd-signal);
+  font-size: 10px;
+}
+
+.delete {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid rgba(226, 106, 106, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: #ff9b9b;
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.delete:hover {
+  background: rgba(226, 106, 106, 0.16);
+  border-color: #ff9b9b;
+}
+
+/* The author's description of the relationship. */
+.noteLabel {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.34);
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.note {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  font-family: var(--bd-font-serif);
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.note:focus {
+  border-color: var(--bd-accent);
+  outline: none;
+}
+
+.note::placeholder {
+  color: rgba(255, 255, 255, 0.26);
+}
+
+.counter {
+  margin: 3px 0 10px;
+  color: rgba(255, 255, 255, 0.26);
+  font-size: 10px;
+  text-align: right;
+}
+
+.unsaved {
+  color: #e0a63f;
+}

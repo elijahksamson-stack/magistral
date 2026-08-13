@@ -1,0 +1,318 @@
+.pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bd-canvas);
+  color: var(--bd-text, #d8d8e0);
+  font-size: 0.82rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bd-gap);
+  min-height: 68px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--bd-border);
+  /*
+   * No background. The raised surface here was the reason the Chat header
+   * read lighter than the Editor's for the same band of chrome; both now
+   * inherit the pane.
+   */
+}
+
+.headerActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0.45rem 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--bd-danger, #e06c75) 40%, transparent);
+  background: color-mix(in srgb, var(--bd-danger, #e06c75) 10%, transparent);
+  color: var(--bd-danger, #e06c75);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.banner button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: currentColor;
+  font: inherit;
+  cursor: pointer;
+}
+
+.transcript {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.loading {
+  margin: auto;
+  color: var(--bd-text-faint, #5c5c6b);
+  font-size: 0.76rem;
+}
+
+.emptyState {
+  max-width: 26rem;
+  text-align: left;
+}
+
+.emptyKicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 9px;
+  color: var(--bd-brand-context);
+  font-family: var(--bd-font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+}
+
+.emptyKicker::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--bd-brand-rule);
+}
+
+.emptyTitle {
+  margin: 0 0 0.5rem;
+  font-family: var(--bd-font-display);
+  font-size: 1.32rem;
+  font-weight: 600;
+  color: var(--bd-text-bright, #ececf4);
+}
+
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.emptyActions button {
+  padding: 6px 10px;
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-dim);
+  font-family: var(--bd-font-sans);
+  font-size: 0.66rem;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+}
+
+.emptyActions button:hover {
+  border-color: var(--bd-border-focus);
+  color: var(--bd-text);
+  background: var(--bd-accent-wash);
+  transform: translateY(-1px);
+}
+
+.emptyBody {
+  margin: 0 0 0.9rem;
+  line-height: 1.6;
+  color: var(--bd-text-dim, #8a8a99);
+  font-family: var(--bd-font-serif);
+  font-size: 0.9rem;
+}
+
+.emptyPoints {
+  margin: 0;
+  padding-left: 1rem;
+  font-family: var(--bd-font-mono);
+  font-size: 0.63rem;
+  line-height: 1.7;
+  color: var(--bd-text-faint, #5c5c6b);
+}
+
+/* Command output — /clear confirming, /help listing. Not an error. */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--bd-border, rgba(255, 255, 255, 0.08));
+  background: var(--bd-accent-wash);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.notice button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.notice button:first-of-type {
+  margin-left: auto;
+}
+
+.notice button:hover {
+  color: #fff;
+}
+
+/* -- Complete the map ----------------------------------------------------- */
+
+/*
+ * Pushed to the right edge of the header. A labelled button, not a glyph:
+ * three controls in this app have shipped as bare icons and none of them was
+ * findable — the ✦ menu, the editor's collapse, and the group rename.
+ */
+/*
+ * Quiet until armed. A destructive control that looks destructive at rest just
+ * gets tuned out; this one only turns red once it means it. Tokens with no
+ * fallbacks, deliberately — the hardcoded ones elsewhere in this file encode a
+ * palette the app does not actually use.
+ */
+.clearButton,
+.clearButtonArmed {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-dim);
+  font-family: var(--bd-font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--bd-transition), border-color var(--bd-transition);
+}
+
+.clearButton:not(:disabled):hover {
+  color: var(--bd-text);
+  border-color: var(--bd-text-dim);
+}
+
+.clearButtonArmed {
+  border-color: var(--bd-danger);
+  color: var(--bd-danger);
+}
+
+.clearButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.discoveryScope {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding-left: 7px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius-sm);
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.discoveryScope select {
+  align-self: stretch;
+  max-width: 145px;
+  border: 0;
+  border-left: 1px solid var(--bd-border);
+  background: var(--bd-surface-sunken);
+  color: var(--bd-text-muted);
+  font: inherit;
+  text-transform: none;
+}
+
+.discoveryScope select:focus {
+  outline: 1px solid var(--bd-accent);
+}
+
+.completeButton {
+  position: relative;
+  overflow: hidden;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--bd-signal) 45%, transparent);
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-signal-wash);
+  color: var(--bd-signal);
+  font-family: var(--bd-font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.completeButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.completeButton:not(:disabled):hover {
+  background: color-mix(in srgb, var(--bd-signal) 16%, transparent);
+  border-color: var(--bd-signal);
+  color: var(--bd-text-bright);
+  box-shadow: 0 0 18px rgba(184, 219, 76, 0.1);
+  transform: translateY(-1px);
+}
+
+.completeButton::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  bottom: 3px;
+  width: 0;
+  height: 1px;
+  background: var(--bd-signal);
+  transition: width var(--bd-transition), box-shadow var(--bd-transition);
+}
+
+.completeButton:not(:disabled):hover::after {
+  width: 12px;
+  box-shadow: 12px 0 0 1px var(--bd-signal);
+}
+
+.completing {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0.9rem 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--bd-border, #26262e);
+  border-radius: var(--bd-radius-sm);
+  color: var(--bd-text-dim, #8b8b9c);
+  font-family: var(--bd-font-mono);
+  font-size: 0.61rem;
+}
+
+.completing button {
+  margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--bd-border, #26262e);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bd-text-dim, #8b8b9c);
+  font: inherit;
+  font-size: 0.66rem;
+  cursor: pointer;
+}

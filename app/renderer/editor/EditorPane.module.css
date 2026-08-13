@@ -1,0 +1,454 @@
+.pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bd-bg);
+  color: var(--bd-text);
+  font-family: var(--bd-font-body);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bd-gap);
+  min-height: 68px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--bd-border);
+  flex: 0 0 auto;
+}
+
+.headerActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/*
+ * Group headings in the "By group" view. Sticky, because a long group scrolls
+ * past its own name and then you are reading rows with no idea whose they are.
+ */
+.groupHeading {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 9px 24px 7px;
+  border-bottom: 1px solid var(--bd-border);
+  background: var(--bd-surface);
+  color: var(--bd-text-muted);
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.groupHeading span {
+  color: var(--bd-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.groupSection + .groupSection {
+  margin-top: 2px;
+}
+
+.cells {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5px 0 8px;
+}
+
+.footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: var(--bd-measure);
+  padding: 12px 24px 18px;
+  border-top: 1px solid var(--bd-border);
+  background: linear-gradient(180deg, rgba(14, 16, 17, 0.45), var(--bd-surface));
+}
+
+/*
+ * Add cell takes the slack; Import sizes to its label. Two equal halves would
+ * leave "+ Add cell" swimming in a button twice the width of its text.
+ */
+.footer > .addCell {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.footer > .importCell {
+  flex: 0 0 auto;
+}
+
+/*
+ * The primary creation action, so it is solid rather than a dashed outline.
+ * The dashed treatment read as a drop zone or a disabled placeholder — quieter
+ * than Import beside it, which inverted the real hierarchy. Primacy comes from
+ * contrast and solidity, not from spending an accent: adding a cell is ordinary
+ * authoring, and the accents carry specific meanings elsewhere.
+ */
+.addCell {
+  padding: 10px 14px;
+  border: 1px solid var(--bd-border-strong);
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-surface-raised);
+  color: var(--bd-text-bright);
+  font-family: var(--bd-font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--bd-transition), border-color var(--bd-transition),
+    background var(--bd-transition);
+}
+
+.addCell:hover {
+  border-color: var(--bd-accent);
+  background: var(--bd-surface-hover);
+  transform: translateY(-1px);
+}
+
+.addCell span[aria-hidden] {
+  color: var(--bd-accent);
+  font-size: 14px;
+}
+
+.addCell:focus-visible {
+  outline: 2px solid var(--bd-accent);
+  outline-offset: 2px;
+}
+
+.notice {
+  margin: 24px 24px 0;
+  max-width: var(--bd-measure);
+  color: var(--bd-text-faint);
+  font-size: 14px;
+  line-height: var(--bd-line-height);
+}
+
+.emptyEditor {
+  position: relative;
+  max-width: min(520px, calc(100% - 48px));
+  margin: 42px 24px;
+  padding: 24px 26px 25px;
+  border: 1px solid var(--bd-border);
+  border-left: 2px solid var(--bd-brand-context);
+  background:
+    linear-gradient(110deg, rgba(69, 198, 212, 0.065), transparent 58%),
+    var(--bd-surface-sunken);
+}
+
+.emptyEditor::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 24px;
+  height: 2px;
+  background: var(--bd-brand-commit);
+}
+
+.emptyKicker {
+  margin: 0 0 9px;
+  color: var(--bd-brand-context);
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.15em;
+}
+
+.emptyEditor h2 {
+  margin: 0 0 9px;
+  color: var(--bd-text-bright);
+  font-family: var(--bd-font-serif);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+}
+
+.emptyEditor > p:last-child {
+  margin: 0;
+  color: var(--bd-text-dim);
+  font-family: var(--bd-font-serif);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.code {
+  margin: 0 4px;
+  padding: 1px 5px;
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-surface-raised);
+  color: var(--bd-code);
+  font-family: var(--bd-font-mono);
+  font-size: 12.5px;
+}
+
+.error {
+  margin: 12px 24px;
+  padding: 10px 12px;
+  border: 1px solid var(--bd-removed-text);
+  border-radius: var(--bd-radius);
+  background: var(--bd-removed-bg);
+  color: var(--bd-removed-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/*
+ * Says what the ✦ button does. The feature was reported missing while it was
+ * working — an affordance nobody finds is the same as one that does not exist.
+ */
+.claudeHint {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 0;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--bd-border);
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.025em;
+  line-height: 1.45;
+}
+
+.claudeHintMark {
+  flex: 0 0 auto;
+  color: var(--bd-accent);
+  font-size: 12px;
+}
+
+.claudeHintText {
+  min-width: 0;
+}
+
+.claudeHint strong {
+  color: var(--bd-text-muted);
+  font-weight: 600;
+}
+
+.navigator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 24px;
+  border-bottom: 1px solid var(--bd-border);
+  background: color-mix(in srgb, var(--bd-surface) 72%, transparent);
+}
+
+.search {
+  display: flex;
+  flex: 1 1 180px;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: var(--bd-bg);
+  color: var(--bd-text-faint);
+}
+
+.search:focus-within {
+  border-color: var(--bd-accent);
+  box-shadow: inset 2px 0 0 var(--bd-accent);
+}
+
+.search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--bd-text);
+  font-family: var(--bd-font-sans);
+  font-size: 11px;
+  letter-spacing: 0.025em;
+}
+
+.search kbd {
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+}
+
+.views {
+  display: flex;
+  gap: 2px;
+}
+
+.views button {
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.views button:hover {
+  color: var(--bd-text);
+  background: var(--bd-surface-hover);
+}
+
+.views button[aria-pressed='true'] {
+  color: var(--bd-text-bright);
+  background: var(--bd-accent-wash);
+  box-shadow: inset 0 -1px 0 var(--bd-accent);
+}
+
+.noResults {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 180px;
+  color: var(--bd-text-dim);
+}
+
+.noResults p {
+  margin: 0;
+  font-family: var(--bd-font-serif);
+  font-size: 17px;
+}
+
+.noResults button {
+  border: 0;
+  background: transparent;
+  color: var(--bd-accent);
+  cursor: pointer;
+}
+
+/*
+ * Import sits above "Add cell" and reads as the heavier action, because it is:
+ * it spends subscription tokens, where adding a cell does not.
+ */
+.importCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  white-space: nowrap;
+  /* Secondary to Add cell: a hairline and muted type, not a filled surface. */
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-muted);
+  font-family: var(--bd-font-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color var(--bd-transition), background var(--bd-transition),
+    color var(--bd-transition);
+}
+
+.importCell:hover:not(:disabled) {
+  border-color: var(--bd-accent);
+  background: var(--bd-accent-wash);
+  color: var(--bd-text-bright);
+  transform: translateY(-1px);
+}
+
+.importCell:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.importCell span[aria-hidden] {
+  color: var(--bd-text-dim);
+  font-size: 14px;
+}
+
+/* Confirms which file was read, so an import is never silent. */
+.importNotice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 7px 18px;
+  border-bottom: 1px solid var(--bd-border);
+  background: rgba(107, 140, 206, 0.1);
+  color: var(--bd-text);
+  font-size: 12px;
+}
+
+.importNotice button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.importNotice button:hover {
+  color: var(--bd-text);
+}
+
+/* Hands the whole window to the graph. */
+.collapsePane {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-left: 0;
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-sans);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--bd-transition), color var(--bd-transition),
+    background var(--bd-transition);
+}
+
+.collapsePane:hover {
+  border-color: var(--bd-accent);
+  background: var(--bd-surface-raised);
+  color: #fff;
+}
+
+/* Bulk fold. Sticky folding makes an undo-all worth having. */
+.foldAll {
+  flex: 0 0 auto;
+  margin-left: 0;
+  padding: 3px 9px;
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color var(--bd-transition), color var(--bd-transition);
+}
+
+.foldAll:hover {
+  border-color: var(--bd-accent);
+  color: var(--bd-text);
+}
