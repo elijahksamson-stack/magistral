@@ -1,4 +1,5 @@
 # Magistral
+<img width="1162" height="732" alt="Screenshot 2026-08-15 at 6 36 36 PM" src="https://github.com/user-attachments/assets/06200a5e-61ce-4fb0-a6e3-582822c39eaa" />
 
 A local-first context builder for organizing human and LLM knowledge. Write in
 cells, wrap a concept in `[[brackets]]`, and the graph is the by-product — not a
