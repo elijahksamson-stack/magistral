@@ -1,6 +1,6 @@
 {
   "name": "braindump",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Magistral — Akimbo's local-first context builder for organizing human and LLM knowledge",
   "author": "Eli Samson",
   "license": "UNLICENSED",

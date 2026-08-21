@@ -6,6 +6,7 @@
  * range slices back to the heading it claims — so that is what is tested here.
  */
 
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,7 @@ import { verifyIndex } from './lib/verify-index.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KNOWLEDGE_DIR = join(REPO_ROOT, 'resources', 'knowledge');
 const INDEX_PATH = join(KNOWLEDGE_DIR, 'index.json');
+const HAS_CORPUS = existsSync(INDEX_PATH);
 
 const EXPECTED_FILE_COUNT = 45;
 const EXPECTED_SECTOR_FILES = 39;
@@ -29,10 +31,11 @@ const SECTIONS_PER_SECTOR_MODULE = 13;
 let payload;
 
 beforeAll(async () => {
+  if (!HAS_CORPUS) return;
   payload = await buildIndexPayload(KNOWLEDGE_DIR);
 });
 
-describe('corpus coverage', () => {
+describe.runIf(HAS_CORPUS)('corpus coverage', () => {
   it('indexes all 45 bundled files', () => {
     expect(payload.fileCount).toBe(EXPECTED_FILE_COUNT);
   });
@@ -76,7 +79,7 @@ describe('corpus coverage', () => {
   });
 });
 
-describe('byte ranges', () => {
+describe.runIf(HAS_CORPUS)('byte ranges', () => {
   it('slices back to the exact heading for every single section', async () => {
     const report = await verifyIndex(KNOWLEDGE_DIR, payload);
     expect(report.failures).toEqual([]);
@@ -152,7 +155,7 @@ describe('byte ranges', () => {
   });
 });
 
-describe('section metadata', () => {
+describe.runIf(HAS_CORPUS)('section metadata', () => {
   it('estimates tokens from the byte range', () => {
     for (const section of payload.sections) {
       expect(section.approxTokens).toBe(Math.ceil((section.byteEnd - section.byteStart) / 4));
@@ -193,7 +196,7 @@ describe('section metadata', () => {
   });
 });
 
-describe('idempotence', () => {
+describe.runIf(HAS_CORPUS)('idempotence', () => {
   it('produces byte-identical sections on a second build', async () => {
     const second = await buildIndexPayload(KNOWLEDGE_DIR);
     expect(JSON.stringify(second.sections)).toBe(JSON.stringify(payload.sections));

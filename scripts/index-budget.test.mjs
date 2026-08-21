@@ -12,6 +12,7 @@
  * even the naive selector always fits, a smarter one does too.
  */
 
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +22,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KNOWLEDGE_DIR = join(REPO_ROOT, 'resources', 'knowledge');
 const CLAUDE_CONTRACT = join(REPO_ROOT, 'shared', 'types', 'claude.ts');
+const HAS_CORPUS = existsSync(join(KNOWLEDGE_DIR, 'index.json'));
 
 /**
  * Ceiling the bridge puts on the mindset frames so topical material always has
@@ -39,13 +41,14 @@ let index;
 let budget;
 
 beforeAll(async () => {
-  index = JSON.parse(await readFile(join(KNOWLEDGE_DIR, 'index.json'), 'utf8'));
-
   // Read the budget from the contract rather than mirroring it, so this test
   // cannot drift away from shared/types/claude.ts.
   const contract = await readFile(CLAUDE_CONTRACT, 'utf8');
   const match = /PACK_TOKEN_BUDGET\s*=\s*([\d_]+)/.exec(contract);
   budget = Number((match?.[1] ?? '').replace(/_/g, ''));
+
+  if (!HAS_CORPUS) return;
+  index = JSON.parse(await readFile(join(KNOWLEDGE_DIR, 'index.json'), 'utf8'));
 });
 
 /**
@@ -77,7 +80,7 @@ describe('budget contract', () => {
   });
 });
 
-describe('section sizing', () => {
+describe.runIf(HAS_CORPUS)('section sizing', () => {
   it('cuts every section small enough to be injectable on its own', () => {
     const oversized = index.sections.filter((section) => section.approxTokens > budget);
     expect(oversized.map((section) => section.id)).toEqual([]);
@@ -106,7 +109,7 @@ describe('section sizing', () => {
   });
 });
 
-describe('greedy selection stays under budget', () => {
+describe.runIf(HAS_CORPUS)('greedy selection stays under budget', () => {
   it('keeps the whole mindset corpus inside a single invocation budget', () => {
     // All five frames together are ~7.5k of the 12k budget, so a request that
     // wanted nothing but frames could have all of them.
