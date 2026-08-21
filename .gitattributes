@@ -1,0 +1,33 @@
+# Line endings are load-bearing here, not a style preference.
+#
+# resources/knowledge/index.json addresses the corpus by BYTE RANGE — packs.ts
+# reads [byteStart, byteEnd) straight out of a sector file without loading it —
+# and Git's default on Windows checks text out with CRLF. Every line then gains
+# a byte, every offset in the index shifts, and each slice arrives starting
+# mid-sentence in the wrong section. The model is handed the wrong material and
+# nothing announces it.
+#
+# The Windows CI job caught exactly this before an installer shipped. Pinning
+# LF makes a checkout byte-identical on every platform, so the committed index
+# stays true wherever the app is built.
+
+* text=auto eol=lf
+
+# The corpus, said explicitly: this is what carries the byte offsets.
+resources/knowledge/** text eol=lf
+
+# Never touch these. A "line ending" inside a compiled addon or an icon is a
+# byte that means something else.
+*.node binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.dmg binary
+*.exe binary
+*.blockmap binary
+*.pdf binary
+*.docx binary

@@ -29,6 +29,7 @@ import {
 import { newCellId, useGraphStore } from '../shared/store';
 import { useClaude } from '../shared/useClaude';
 import { applyCompletion } from './applyCompletion';
+import { nextTurnToMap, seenTurnIds } from './autoMap';
 import { cancelChatTurn, sendChatTurn } from './chatActions';
 import MapReview from './MapReview';
 import { helpText, isUnknownCommand, parseCommand } from './commands';
@@ -54,6 +55,7 @@ import {
   shortGraphName,
   type EntityPresentation,
 } from '../shared/entityPresentation';
+import { isBoolean, readPersisted, writePersisted } from '../shared/persisted';
 import { subscribeSessionId } from './sessionTracking';
 import { useChatTurns } from './useChatTurns';
 import {
@@ -67,11 +69,40 @@ import {
 /** How long a primed "Clear chat" stays armed before disarming itself. */
 const CLEAR_CONFIRM_TIMEOUT_MS = 4000;
 
+/** localStorage scope for the auto-map toggle, remembered per vault. */
+const AUTO_MAP_SCOPE = 'chat.autoMap';
+
 const SUGGESTIONS = [
   'What relationships am I missing?',
   'Challenge the weakest link',
   'Summarize the map in plain language',
 ] as const;
+
+/** Longest slice of an answer handed back to the model, in characters. */
+const ANSWER_EXCERPT_LIMIT = 6000;
+
+/**
+ * Turn an answer into an instruction for a proposal.
+ *
+ * The answer is quoted rather than summarised: it already names the concepts,
+ * already says what they are, and already relates them to what is on the map.
+ * Asking the model to re-derive all that from the question alone would produce
+ * a different set of concepts than the ones the author just read and wanted.
+ */
+function addToMapInstruction(question: string, answer: string): string {
+  const excerpt =
+    answer.length > ANSWER_EXCERPT_LIMIT ? `${answer.slice(0, ANSWER_EXCERPT_LIMIT)}…` : answer;
+  return [
+    'The answer below was written against this map, and named concepts the map does not have.',
+    'Propose those missing concepts as newNodes. Give each one a note saying what it is, in the',
+    "answer's own terms. Where the answer distinguishes named parts of a concept, list them under",
+    'that concept as subConcepts with their own notes rather than as separate concepts.',
+    'Then connect each new concept to the EXISTING concepts it bears on, with a note on every edge',
+    'explaining the mechanism. Do not propose a concept the map already has.',
+    `\n\nThe question asked: ${question}`,
+    `\n\nThe answer given:\n${excerpt}`,
+  ].join(' ');
+}
 
 function crossConnectionScan(scope: ConnectionScope): string {
   return [
@@ -187,6 +218,18 @@ export default function ChatPane({
    * the author has to keep reading.
    */
   const [completionId, setCompletionId] = useState<string | null>(null);
+
+  /**
+   * Auto-map: read every finished answer for concepts the map lacks.
+   *
+   * OFF by default, and remembered per vault. CLAUDE.md rule 4 says nothing is
+   * inferred in the background and no CLI runs without a click — this keeps
+   * both: flipping the toggle IS the click, and every proposal it produces
+   * still goes through the same review panel before anything reaches the graph.
+   */
+  const [isAutoMapping, setIsAutoMapping] = useState(false);
+  /** Turns already read, so a re-render never re-reads the same answer. */
+  const mappedTurnIds = useRef<Set<string>>(new Set());
   const [isApplying, setIsApplying] = useState(false);
   /** First click arms, second deletes. Wiping a transcript cannot be undone. */
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
@@ -420,6 +463,60 @@ export default function ChatPane({
     await startCompletion(instruction, discoveryScope);
   }, [discoveryScope, draft, startCompletion]);
 
+  /**
+   * "Add to map" on a finished answer.
+   *
+   * Runs at 'all' scope: an answer naming concepts the graph lacks is exactly
+   * the case where new nodes must be creatable, and every narrower scope refuses
+   * newNodes by design.
+   */
+  const handleAddToMap = useCallback(
+    (turn: (typeof rendered)[number]): void => {
+      if (!graph || isCompleting) return;
+      setDiscoveryScope('all');
+      void startCompletion(addToMapInstruction(turn.prompt, turn.text), 'all');
+    },
+    [graph, isCompleting, startCompletion],
+  );
+
+  // Remembered per vault: auto-mapping suits a vault being built up and not one
+  // being read, and that is a property of the vault, not of the session.
+  useEffect(() => {
+    setIsAutoMapping(readPersisted(AUTO_MAP_SCOPE, graph?.id ?? null, isBoolean, false));
+    mappedTurnIds.current = new Set();
+  }, [graph?.id]);
+
+  const toggleAutoMapping = useCallback((): void => {
+    setIsAutoMapping((current) => {
+      const next = !current;
+      writePersisted(AUTO_MAP_SCOPE, graph?.id ?? null, next);
+      /*
+       * Turning it ON must not retroactively read the whole transcript. The
+       * author asked for what they say NEXT to be mapped, and firing twenty
+       * proposals at a conversation they already had is not that.
+       */
+      if (next) mappedTurnIds.current = seenTurnIds(rendered);
+      return next;
+    });
+  }, [graph?.id, rendered]);
+
+  /**
+   * Read the next unread answer, one at a time.
+   *
+   * Serialised deliberately: a proposal already on screen is one the author is
+   * still deciding about, and replacing it mid-read would discard changes they
+   * had ticked. The queue drains as each review is applied or dismissed.
+   */
+  useEffect(() => {
+    if (!isAutoMapping || !graph || isCompleting || completionRun?.completion) return;
+
+    const next = nextTurnToMap(rendered, mappedTurnIds.current);
+    if (!next) return;
+
+    mappedTurnIds.current.add(next.id);
+    void startCompletion(addToMapInstruction(next.prompt, next.text), 'all');
+  }, [completionRun?.completion, graph, isAutoMapping, isCompleting, rendered, startCompletion]);
+
   useEffect(() => {
     if (!autoCompleteRequestId || !graph || isCompleting) return;
     if (consumedAutoCompleteId.current === autoCompleteRequestId) return;
@@ -595,6 +692,20 @@ export default function ChatPane({
           </label>
           <button
             type="button"
+            className={isAutoMapping ? styles.autoMapOn : styles.autoMap}
+            aria-pressed={isAutoMapping}
+            onClick={toggleAutoMapping}
+            disabled={graph === null}
+            title={
+              isAutoMapping
+                ? 'Reading each answer for concepts your map lacks. Every proposal still waits for your approval.'
+                : 'Read each answer as you talk and propose the concepts, subnodes and connections your map lacks. Nothing is added until you approve it.'
+            }
+          >
+            {isAutoMapping ? '● Auto-map on' : '○ Auto-map'}
+          </button>
+          <button
+            type="button"
             className={styles.completeButton}
             onClick={handleComplete}
             disabled={graph === null || isCompleting}
@@ -649,6 +760,8 @@ export default function ChatPane({
             onDismissError={(turnId) =>
               setDismissedErrorIds((current) => new Set([...current, turnId]))
             }
+            onAddToMap={graph ? handleAddToMap : undefined}
+            isAddingToMap={isCompleting}
             emptyState={<EmptyState hasGraph={graph !== null} onPrompt={setDraft} />}
           />
         )}

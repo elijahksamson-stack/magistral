@@ -65,6 +65,7 @@ import {
 import {
   addEdge,
   addNode,
+  invoke,
   configureLayout,
   setNodeGroup,
   pinNode,
@@ -100,8 +101,9 @@ import {
   type RecallState,
 } from './recall';
 import { computeNeighbourhood } from './selection';
-import { setSubConceptNote } from './subConceptNote';
-import { conceptSectionText, setConceptSectionText } from './conceptSection';
+import { linkSpanText, setLinkSpanText } from './linkSpan';
+import { findUnlinkedMentions, linkMentionAt, type UnlinkedMention } from './unlinkedMentions';
+import { embeddedImages } from './embeds';
 import { flowPhase } from './flow';
 import { useClaude } from '../shared/useClaude';
 import { useLayoutLoop } from './useLayoutLoop';
@@ -127,6 +129,15 @@ const EDGE_EDITOR_WIDTH_PX = 236;
 const EDGE_EDITOR_HEIGHT_PX = 400;
 const EMPTY_STRENGTHS: ReadonlyMap<string, number> = new Map();
 const SUBNODE_ORBIT_WORLD = 72;
+
+/**
+ * Ceiling on unlinked mentions offered for one concept.
+ *
+ * A short label can appear in every cell in the vault. A panel listing two
+ * hundred of them is one the author closes rather than reads, and the useful
+ * ones are always near the top.
+ */
+const MAX_UNLINKED_MENTIONS = 25;
 
 function nestedPosition(
   parent: GraphNode,
@@ -223,6 +234,17 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
     () => new Set(RELATION_KINDS),
   );
   const [connectionScope, setConnectionScope] = useState<ConnectionScope>('all');
+
+  /**
+   * The relation kinds the map actually uses, in the canonical order, for the
+   * legend. Derived from the edges rather than from the filter set: the legend
+   * describes what is drawn, and a kind can be filtered on while no edge has it.
+   */
+  const presentRelations = useMemo((): RelationKind[] => {
+    const used = new Set((graph?.edges ?? []).map((edge) => edge.relation));
+    return RELATION_KINDS.filter((relation) => used.has(relation));
+  }, [graph?.edges]);
+
   /** The relationship being edited, plus where the click landed. */
   const [editingEdge, setEditingEdge] = useState<{ edgeId: string; x: number; y: number } | null>(
     null,
@@ -854,13 +876,23 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
       const target = selectedNodeId ? nodeById.get(selectedNodeId) : null;
       if (!target) return;
 
-      // A concept written as a section heading keeps its prose in the cell, so
-      // the cell is what must change; the core's own note field is for concepts
-      // whose description is the line their link sits on.
+      // A concept the author wrote keeps its description in the cell, so the
+      // cell is what must change. The core's own note field is only for a node
+      // no cell authored — one an import or a proposal put on the canvas.
       const source = cellTextFor(target);
-      if (source && conceptSectionText(source.markdown, target.label) !== null) {
-        const rewritten = setConceptSectionText(source.markdown, target.label, next);
-        if (rewritten === source.markdown) return;
+      const current = source ? linkSpanText(source.markdown, target.label) : null;
+      if (source && current !== null) {
+        // Saving the text that is already there is not a change worth a write.
+        if (next.trim() === current.trim()) return;
+
+        const rewritten = setLinkSpanText(source.markdown, target.label, next);
+        if (rewritten === source.markdown) {
+          // The description differs but the cell did not move, so the label is
+          // not linked in the cell we resolved. Silence here is what discarded
+          // an author's typing without a word.
+          setPaneError(`"${target.label}" could not be updated in its cell.`);
+          return;
+        }
         void upsertCell(source.cellId, rewritten)
           .then(() => {
             invalidateTopology();
@@ -900,15 +932,19 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
       }
 
       /*
-       * A heading link owns the prose beneath it; an inline one owns its line.
-       * Writing the wrong one either strands the section or rewrites a
-       * paragraph the author did not have open.
+       * One rule for both shapes: the link owns the text up to the next link,
+       * whether it sits alone on its line or mid-paragraph. The two-rule version
+       * this replaced had to guess which writer applied, and guessed wrong on an
+       * aliased link — silently discarding the edit.
        */
-      const rewritten =
-        conceptSectionText(markdown, subnode.label) !== null
-          ? setConceptSectionText(markdown, subnode.label, next)
-          : setSubConceptNote(markdown, subnode.label, next);
-      if (rewritten === markdown) return;
+      const current = linkSpanText(markdown, subnode.label);
+      if (current !== null && next.trim() === current.trim()) return;
+
+      const rewritten = setLinkSpanText(markdown, subnode.label, next);
+      if (rewritten === markdown) {
+        setPaneError(`"${subnode.label}" is not linked in the cell that owns it.`);
+        return;
+      }
       void upsertCell(cellId, rewritten)
         .then(() => {
           invalidateTopology();
@@ -1010,9 +1046,93 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
     const target = selectedNodeId ? nodeById.get(selectedNodeId) : null;
     if (!target) return '';
     const source = cellTextFor(target);
-    const section = source ? conceptSectionText(source.markdown, target.label) : null;
-    return section ?? target.note ?? '';
+    const authored = source ? linkSpanText(source.markdown, target.label) : null;
+    return authored ?? target.note ?? '';
   }, [cellTextFor, nodeById, selectedNodeId]);
+
+  /**
+   * Where the selected concept is named in prose without being linked.
+   *
+   * Capped, because a common word can appear in every cell and a panel listing
+   * two hundred of them is one the author closes rather than reads. The count
+   * shown is the count offered, so the number never overstates the work.
+   */
+  const selectedNodeMentions = useMemo((): UnlinkedMention[] => {
+    const target = selectedNodeId ? nodeById.get(selectedNodeId) : null;
+    if (!target || target.kind === 'group') return [];
+    return findUnlinkedMentions(graph?.cells ?? [], target.label).slice(0, MAX_UNLINKED_MENTIONS);
+  }, [graph?.cells, nodeById, selectedNodeId]);
+
+  /**
+   * Bracket one mention, turning writing already done into a relationship.
+   *
+   * Goes through `upsertCell` like a typed edit, so the core re-parses the cell
+   * and the new link becomes an edge by the same route as one typed by hand.
+   */
+  const onLinkMention = useCallback(
+    (mention: UnlinkedMention): void => {
+      const cell = graph?.cells.find((candidate) => candidate.id === mention.cellId);
+      if (!cell) return;
+
+      const rewritten = linkMentionAt(cell.markdown, mention.index, mention.text.length);
+      if (rewritten === cell.markdown) {
+        setPaneError('That mention has moved since the panel was drawn. Reopen the concept.');
+        return;
+      }
+
+      void upsertCell(cell.id, rewritten)
+        .then(() => {
+          invalidateTopology();
+          restart();
+        })
+        .catch((cause: unknown) => setPaneError(toErrorMessage(cause)));
+    },
+    [graph?.cells, invalidateTopology, restart, upsertCell],
+  );
+
+  /**
+   * Images the selected concept's cell embeds, read as data URLs.
+   *
+   * Loaded in an effect rather than a memo because reading them crosses IPC.
+   * The request is abandoned when the selection changes mid-flight, so clicking
+   * quickly through concepts cannot land an earlier concept's figures on a
+   * later one.
+   */
+  const [selectedNodeImages, setSelectedNodeImages] = useState<
+    readonly { fileName: string; dataUrl: string }[]
+  >([]);
+
+  useEffect(() => {
+    const target = selectedNodeId ? nodeById.get(selectedNodeId) : null;
+    const source = target ? cellTextFor(target) : null;
+    const fileNames = source ? embeddedImages(source.markdown) : [];
+    const vaultId = graph?.id;
+
+    if (!vaultId || fileNames.length === 0) {
+      setSelectedNodeImages([]);
+      return undefined;
+    }
+
+    let isCurrent = true;
+    void Promise.all(
+      fileNames.map(async (fileName) => {
+        const { dataUrl } = await invoke('image:read', { vaultId, fileName });
+        return dataUrl ? { fileName, dataUrl } : null;
+      }),
+    )
+      .then((loaded) => {
+        // A missing file is a gap in the gallery, not an error: a cell can
+        // outlive an attachment the author deleted by hand.
+        if (isCurrent) setSelectedNodeImages(loaded.filter((image) => image !== null));
+      })
+      .catch((cause: unknown) => {
+        if (isCurrent) setPaneError(toErrorMessage(cause));
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [cellTextFor, graph?.id, nodeById, selectedNodeId]);
 
   const selectedSubnodeDescription = useMemo((): string => {
     if (selectedSubnode?.kind !== 'subnode') return '';
@@ -1020,8 +1140,8 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
       .map((parentId) => nodeById.get(parentId))
       .find((candidate) => candidate !== undefined && candidate.cellIds.length > 0);
     const source = cellTextFor(parent);
-    const section = source ? conceptSectionText(source.markdown, selectedSubnode.label) : null;
-    return section ?? selectedSubnode.note ?? '';
+    const authored = source ? linkSpanText(source.markdown, selectedSubnode.label) : null;
+    return authored ?? selectedSubnode.note ?? '';
   }, [cellTextFor, nodeById, selectedSubnode]);
 
   const onGenerateNodeDescription = useCallback((): void => {
@@ -1728,6 +1848,9 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
               ? 'Deepen the description you have, using this concept’s sub-concepts and everything it connects to. Your claims are kept.'
               : "Write a description from this concept's name, its sub-concepts and everything it connects to."
           }
+          unlinkedMentions={selectedNodeMentions}
+          onLinkMention={onLinkMention}
+          images={selectedNodeImages}
           onClose={() => setSelectedNodeId(null)}
         />
       ) : null}
@@ -1742,6 +1865,7 @@ export default function GraphPane({ recallText, onFindConnections }: GraphPanePr
           connectSourceLabel={connectSourceId ? labelOf(connectSourceId) : undefined}
           nodeKinds={nodeKinds}
           relations={relations}
+          presentRelations={presentRelations}
           connectionScope={connectionScope}
           onFocusOnlyChange={setFocusOnly}
           onConnectModeChange={changeConnectMode}

@@ -13,7 +13,8 @@
  * the document by hand, and the Editor has something to show.
  *
  * Sub-concepts become `## [[Facet]]` sections inside their parent's cell, which
- * is the same shape `conceptSection.ts` reads descriptions out of.
+ * is the same shape `linkSpan.ts` reads descriptions out of: each link owns the
+ * text up to the next one.
  *
  * Pure: parsing and planning only. The caller performs the IPC.
  */

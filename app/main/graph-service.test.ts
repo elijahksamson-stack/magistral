@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_VIEW, SCHEMA_VERSION, type Cell, type KnowledgeGraph } from '../../shared/types/graph';
 import { GraphService, applyCellOrder } from './graph-service';
@@ -59,6 +60,47 @@ describe('applyCellOrder', () => {
     const original = graph([cell('a', 0)]);
 
     expect(applyCellOrder(original, [])).toBe(original);
+  });
+});
+
+/*
+ * Descriptions are PERSISTED and restored verbatim by graphFromJSON, so a
+ * change to how a [[link]] earns its description would otherwise reach only the
+ * cells an author happens to retype next — invisible on a vault they already
+ * wrote. Opening re-derives them.
+ *
+ * Needs the compiled addon. Skipped rather than failed where it is absent, so a
+ * checkout that has not run `npm run build:native` still gets a green suite.
+ */
+describe('opening a vault re-derives its descriptions', () => {
+  const service = new GraphService([resolve(process.cwd(), 'build/Release/braindump.node')]);
+  const itWithCore = service.isReady() ? it : it.skip;
+
+  itWithCore('replaces a stale whole-paragraph note with per-link descriptions', () => {
+    // A vault written under the old rule, where a note was the whole LINE its
+    // link sat on: all three concepts carried the same paragraph.
+    const stale = graph([
+      {
+        id: 'c1',
+        order: 0,
+        markdown:
+          '[[Sports]]\n\n[[Basketball]] scores by shot distance. [[Volleyball]] keeps its rotations constant.',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    service.openFromJSON(stale);
+
+    const sports = service.snapshot().nodes.find((node) => node.label === 'Sports');
+    const facets = new Map(
+      (sports?.subConcepts ?? []).map((sub) => [sub.label, sub.note ?? ''] as const),
+    );
+
+    expect(facets.get('Basketball')).toBe('scores by shot distance.');
+    expect(facets.get('Volleyball')).toBe('keeps its rotations constant.');
+    // The reported bug in one assertion: Basketball must not describe volleyball.
+    expect(facets.get('Basketball')).not.toContain('rotations');
   });
 });
 

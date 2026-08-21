@@ -12,7 +12,6 @@
  * even the naive selector always fits, a smarter one does too.
  */
 
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,12 +21,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KNOWLEDGE_DIR = join(REPO_ROOT, 'resources', 'knowledge');
 const CLAUDE_CONTRACT = join(REPO_ROOT, 'shared', 'types', 'claude.ts');
-
-/**
- * No corpus ships publicly, so no index.json is generated. These assertions
- * are about a real index's shape; without one they skip rather than fail.
- */
-const HAS_INDEX = existsSync(join(KNOWLEDGE_DIR, 'index.json'));
 
 /**
  * Ceiling the bridge puts on the mindset frames so topical material always has
@@ -46,7 +39,6 @@ let index;
 let budget;
 
 beforeAll(async () => {
-  if (!HAS_INDEX) return;
   index = JSON.parse(await readFile(join(KNOWLEDGE_DIR, 'index.json'), 'utf8'));
 
   // Read the budget from the contract rather than mirroring it, so this test
@@ -78,14 +70,14 @@ function greedyFill(candidates, limit, spent = 0) {
 /** @param {import('./lib/types.mjs').PackSectionLike} section */
 const ofKind = (kind) => index.sections.filter((section) => section.kind === kind);
 
-describe.skipIf(!HAS_INDEX)('budget contract', () => {
+describe('budget contract', () => {
   it('reads a positive PACK_TOKEN_BUDGET from shared/types/claude.ts', () => {
     expect(Number.isFinite(budget)).toBe(true);
     expect(budget).toBeGreaterThan(0);
   });
 });
 
-describe.skipIf(!HAS_INDEX)('section sizing', () => {
+describe('section sizing', () => {
   it('cuts every section small enough to be injectable on its own', () => {
     const oversized = index.sections.filter((section) => section.approxTokens > budget);
     expect(oversized.map((section) => section.id)).toEqual([]);
@@ -114,7 +106,7 @@ describe.skipIf(!HAS_INDEX)('section sizing', () => {
   });
 });
 
-describe.skipIf(!HAS_INDEX)('greedy selection stays under budget', () => {
+describe('greedy selection stays under budget', () => {
   it('keeps the whole mindset corpus inside a single invocation budget', () => {
     // All five frames together are ~7.5k of the 12k budget, so a request that
     // wanted nothing but frames could have all of them.

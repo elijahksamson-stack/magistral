@@ -34,6 +34,63 @@ const renderList = (turns: ChatTurn[], runs: Record<string, ClaudeRunSnapshot>) 
     <MessageList turns={renderTranscript(turns, runs)} labels={[]} />,
   );
 
+/*
+ * "Your graph has no node for X" is the moment the author most wants X on the
+ * map. The offer belongs on the finished answer — and only on a finished one,
+ * since half a paragraph names half the concepts.
+ */
+describe('offering to add an answer to the map', () => {
+  const finished = (extra: Partial<React.ComponentProps<typeof MessageList>> = {}) =>
+    renderToStaticMarkup(
+      <MessageList
+        turns={renderTranscript([turn('req-1', 'how does self-hosting affect demand?')], {
+          'req-1': run({ text: 'Your graph has no node for crypto markets.', usage: USAGE }),
+        })}
+        labels={[]}
+        onAddToMap={() => {}}
+        {...extra}
+      />,
+    );
+
+  it('offers on a finished answer', () => {
+    expect(finished()).toContain('Add to map');
+  });
+
+  it('says it is working while a proposal is already being drafted', () => {
+    const html = finished({ isAddingToMap: true });
+
+    expect(html).toContain('Reading the answer…');
+    expect(html).toContain('disabled');
+  });
+
+  it('does not offer while the answer is still streaming', () => {
+    const html = renderToStaticMarkup(
+      <MessageList
+        turns={renderTranscript([turn('req-1', 'why?')], {
+          'req-1': run({ text: 'Your graph has no node for', streaming: true }),
+        })}
+        labels={[]}
+        onAddToMap={() => {}}
+      />,
+    );
+
+    expect(html).not.toContain('Add to map');
+  });
+
+  it('does not offer at all when no handler is supplied', () => {
+    const html = renderToStaticMarkup(
+      <MessageList
+        turns={renderTranscript([turn('req-1', 'why?')], {
+          'req-1': run({ text: 'An answer.', usage: USAGE }),
+        })}
+        labels={[]}
+      />,
+    );
+
+    expect(html).not.toContain('Add to map');
+  });
+});
+
 describe('streaming', () => {
   it('renders each delta snapshot in order, extending the previous one', () => {
     const deltas = ['The', 'The binding', 'The binding constraint moves.'];

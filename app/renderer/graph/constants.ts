@@ -3,6 +3,8 @@
  * interaction layer and the exporters lives here.
  */
 
+import type { RelationKind } from '../../../shared/types/graph';
+
 // -- viewport ---------------------------------------------------------------
 
 export const MIN_ZOOM = 0.05;
@@ -55,6 +57,31 @@ export const MAX_EDGE_WIDTH = 2.75;
 export const EDGE_WEIGHT_CEILING = 6;
 export const EDGE_COLOR = '#263437';
 export const EDGE_HIGHLIGHT_COLOR = '#45c6d4';
+
+/**
+ * A colour per relation kind, so the canvas says what the Filters panel does.
+ *
+ * Typed as an exhaustive Record: adding a RelationKind fails the build here
+ * rather than silently drawing the new relation in whatever the fallback was.
+ *
+ * Two constraints shaped the palette. Cyan and lime are reserved — selection
+ * and AI findings already mean those colours, and a relation wearing one would
+ * read as state rather than as type. And `relates_to` and `mentions` stay muted
+ * deliberately: they are the untyped defaults most edges carry, so making them
+ * loud would drown out the relations the author chose on purpose.
+ */
+export const RELATION_COLORS: Record<RelationKind, string> = {
+  relates_to: '#33474b',
+  mentions: '#3d4c50',
+  causes: '#d9734e',
+  affects: '#c98a5e',
+  affected_by: '#8f7f9c',
+  depends_on: '#c2a24a',
+  part_of: '#6f86c4',
+  instance_of: '#8f74b5',
+  supports: '#5aa36f',
+  contradicts: '#c2495c',
+};
 export const EDGE_ALPHA = 0.58;
 export const EDGE_HIGHLIGHT_ALPHA = 0.9;
 export const DIMMED_ALPHA = 0.12;

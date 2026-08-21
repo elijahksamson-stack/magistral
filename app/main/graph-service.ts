@@ -81,7 +81,43 @@ export class GraphService {
     const repair = ensureNodeCellCoverage(graph);
     this.installGraph(repair.graph);
     this.logCoverageRepair(repair, 'graph open');
+    this.resyncCellsFromMarkdown(repair.graph.cells);
     return repair;
+  }
+
+  /**
+   * Re-derive every description from the cell that wrote it.
+   *
+   * `note` and `subConcepts` are PERSISTED, and `graphFromJSON` restores them
+   * verbatim, so a change to how a `[[link]]` acquires its description would
+   * otherwise reach only the cells an author happens to retype next. A vault
+   * written under the old line-scoped rule would keep showing one paragraph as
+   * the description of every concept in it — the fix would be invisible on real
+   * data.
+   *
+   * `syncCell` is idempotent, so this is safe on every open: a vault already
+   * correct re-parses to the same bytes. It belongs here rather than in
+   * `installGraph`, which the snapshot path shares and must not pay for.
+   */
+  private resyncCellsFromMarkdown(cells: readonly Cell[]): void {
+    if (cells.length === 0) return;
+    const graph = this.requireGraph();
+
+    let failed = 0;
+    for (const cell of cells) {
+      try {
+        graph.syncCell(cell.id, cell.markdown);
+      } catch (error: unknown) {
+        // One unparseable cell must not stop the vault opening. The rest are
+        // still re-derived, and this one keeps whatever it already had.
+        failed += 1;
+        log.warn('cell could not be re-parsed on open', {
+          cellId: cell.id,
+          reason: errorMessage(error),
+        });
+      }
+    }
+    log.info('re-derived descriptions from cells', { cells: cells.length, failed });
   }
 
   createEmpty(name: string): void {

@@ -54,10 +54,11 @@ export async function resolveClaudeBinary(
     '/opt/homebrew/bin',
     '/usr/local/bin',
     '/usr/bin',
+    ...windowsFallbackDirectories(env, homeDir),
   ];
 
   return firstExecutable(
-    [...pathEntries, ...fallbacks].map((dir) => path.join(dir, CLAUDE_BINARY_NAME)),
+    candidatePaths([...pathEntries, ...fallbacks], CLAUDE_BINARY_NAME, env),
   );
 }
 
@@ -76,20 +77,69 @@ export async function resolveCodexBinary(
     '/opt/homebrew/bin',
     '/usr/local/bin',
     '/usr/bin',
+    ...windowsFallbackDirectories(env, homeDir),
   ];
   const appCandidates = [
     '/Applications/ChatGPT.app/Contents/Resources/codex',
     path.join(homeDir, 'Applications', 'ChatGPT.app', 'Contents', 'Resources', 'codex'),
   ];
   return firstExecutable([
-    ...directories.map((dir) => path.join(dir, CODEX_BINARY_NAME)),
+    ...candidatePaths(directories, CODEX_BINARY_NAME, env),
     ...appCandidates,
   ]);
+}
+
+/**
+ * The names one CLI can have on this platform.
+ *
+ * On POSIX a binary is just `claude`. On Windows it is almost never that: an
+ * npm-installed CLI is a `claude.cmd` shim, and `path.join(dir, 'claude')`
+ * matches nothing. Magistral therefore found no providers at all on Windows and
+ * every AI feature was silently unavailable — the app opened, vaults worked,
+ * and the ✦ actions simply were not there.
+ *
+ * PATHEXT is what the shell itself consults, so it is what this consults, with
+ * the documented default when the variable is absent. The bare name stays in
+ * the list because a real extensionless executable is still valid.
+ */
+function executableNames(base: string, env: NodeJS.ProcessEnv): string[] {
+  if (process.platform !== 'win32') return [base];
+  const pathext = env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD';
+  const extensions = pathext
+    .split(';')
+    .map((extension) => extension.trim())
+    .filter(Boolean);
+  return [...extensions.map((extension) => `${base}${extension.toLowerCase()}`), base];
+}
+
+/** Where a CLI installs on Windows, which shares nothing with the POSIX list. */
+function windowsFallbackDirectories(env: NodeJS.ProcessEnv, homeDir: string): string[] {
+  if (process.platform !== 'win32') return [];
+  const appData = env.APPDATA ?? path.join(homeDir, 'AppData', 'Roaming');
+  const localAppData = env.LOCALAPPDATA ?? path.join(homeDir, 'AppData', 'Local');
+  return [
+    path.join(appData, 'npm'), // npm -g puts its shims here
+    path.join(localAppData, 'Programs'),
+    path.join(localAppData, 'Microsoft', 'WindowsApps'),
+  ];
+}
+
+/** Every name a CLI could carry, in every directory worth looking in. */
+function candidatePaths(
+  directories: readonly string[],
+  base: string,
+  env: NodeJS.ProcessEnv,
+): string[] {
+  const names = executableNames(base, env);
+  return directories.flatMap((dir) => names.map((name) => path.join(dir, name)));
 }
 
 async function firstExecutable(candidates: readonly string[]): Promise<string | null> {
   for (const candidate of new Set(candidates)) {
     try {
+      // X_OK is a no-op on Windows — it degrades to an existence check, which
+      // is the right question there anyway, since PATHEXT has already decided
+      // what counts as executable.
       await fs.access(candidate, constants.X_OK);
       return candidate;
     } catch {

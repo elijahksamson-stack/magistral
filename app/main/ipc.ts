@@ -21,7 +21,8 @@ import type { CliProviderSelection } from '../../shared/types/claude';
 import type { ClaudeBridge } from './claude/bridge';
 import { checkClaudeHealth } from './claude/health';
 import { parseInvokeRequest } from './claude/request';
-import { pickAndReadDocument } from './documents';
+import { pickAndAttachImage, readImage } from './assets';
+import { pickAndReadDocument, pickAndReadFolder } from './documents';
 import { exportGraphYaml, importMapYaml } from './export';
 import type { GraphService } from './graph-service';
 import {
@@ -315,6 +316,24 @@ export function buildHandlers(ctx: IpcContext): IpcHandlers {
 
     'import:document': async () => ({
       document: await pickAndReadDocument(ctx.getWindow()),
+    }),
+
+    'import:folder': async () => ({
+      document: await pickAndReadFolder(ctx.getWindow()),
+    }),
+
+    'image:attach': async (payload) => ({
+      image: await pickAndAttachImage(
+        ctx.getWindow(),
+        vaults.directoryFor(requireString(payload, 'vaultId', 'image:attach')),
+      ),
+    }),
+
+    'image:read': async (payload) => ({
+      dataUrl: await readImage(
+        vaults.directoryFor(requireString(payload, 'vaultId', 'image:read')),
+        requireString(payload, 'fileName', 'image:read'),
+      ),
     }),
 
     // -- claude bridge ----------------------------------------------------

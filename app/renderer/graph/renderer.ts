@@ -54,6 +54,7 @@ import {
   EDGE_ALPHA,
   EDGE_BOW_RATIO,
   EDGE_COLOR,
+  RELATION_COLORS,
   EDGE_HIGHLIGHT_ALPHA,
   EDGE_HIGHLIGHT_COLOR,
   EDGE_WEIGHT_CEILING,
@@ -434,7 +435,10 @@ function drawEdges(ctx: RenderContext2D, scene: RenderScene, view: Bounds): numb
         : isHot
           ? EDGE_HIGHLIGHT_ALPHA
           : DIMMED_ALPHA;
-    ctx.strokeStyle = isHot ? EDGE_HIGHLIGHT_COLOR : EDGE_COLOR;
+    // Colour carries the relation kind; the highlight still wins, because what
+    // the pointer is touching matters more in the moment than what it means.
+    const relationColor = RELATION_COLORS[edge.relation] ?? EDGE_COLOR;
+    ctx.strokeStyle = isHot ? EDGE_HIGHLIGHT_COLOR : relationColor;
     ctx.lineWidth = edgeWidth(edge);
 
     const from = worldToScreen(scene.viewport, a.x, a.y);
@@ -452,7 +456,7 @@ function drawEdges(ctx: RenderContext2D, scene: RenderScene, view: Bounds): numb
       const radius = target
         ? screenNodeRadius(target, scene.viewport.zoom, scene.contentSizes?.get(target.id))
         : 0;
-      ctx.fillStyle = isHot ? EDGE_HIGHLIGHT_COLOR : EDGE_COLOR;
+      ctx.fillStyle = isHot ? EDGE_HIGHLIGHT_COLOR : relationColor;
       drawArrowhead(ctx, control, to, radius + ARROWHEAD_GAP_PX);
     }
 

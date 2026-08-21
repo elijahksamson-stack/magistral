@@ -1,9 +1,9 @@
 {
   "name": "braindump",
-  "version": "0.1.2",
-  "description": "Magistral — a local-first context builder for organizing human and LLM knowledge",
+  "version": "0.2.5",
+  "description": "Magistral — Akimbo's local-first context builder for organizing human and LLM knowledge",
   "author": "Eli Samson",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "private": true,
   "main": "out/main/index.js",
   "scripts": {
@@ -56,6 +56,7 @@
   "build": {
     "appId": "ai.onthemoney.braindump",
     "productName": "Magistral",
+    "afterPack": "scripts/verify-native-binary.cjs",
     "copyright": "Copyright © 2026 Eli Samson",
     "directories": {
       "output": "release",

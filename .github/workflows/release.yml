@@ -1,0 +1,120 @@
+# Build Magistral on the platform each installer ships to.
+#
+# The native core (`build/Release/braindump.node`) is a node-gyp addon compiled
+# from core/. node-gyp cannot cross-compile it: a Windows installer built on a
+# Mac contains a Mach-O binary, Windows refuses it with "is not a valid Win32
+# application", and the app opens to an error instead of a vault. That is
+# exactly what 0.1.2 and 0.2.0 shipped.
+#
+# So each installer is built on its own runner. scripts/verify-native-binary.cjs
+# runs as an afterPack hook and fails the build when the packaged addon does not
+# match the target platform, so this cannot regress silently even if someone
+# builds by hand later.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Still run both builds to expose every failure in one pass. A release is
+      # published only if both verified installers succeed.
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macOS
+            artifact: macos-installer
+            build: npx electron-builder --mac --x64 --publish never
+          - os: windows-latest
+            label: Windows
+            artifact: windows-installer
+            build: npx electron-builder --win --x64 --publish never
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # node-gyp needs a C++17 toolchain. Both runners ship one already (Xcode
+      # command line tools on macOS, MSVC on windows-latest), so there is
+      # nothing to install — but the addon must be built explicitly, because
+      # `npm run dist` deliberately does not build it.
+      - name: Build the native core
+        run: npm run build:native
+
+      # The C++ doctest suite compiles with clang++ directly, which the Windows
+      # runner does not have on PATH; tsc and vitest run on both.
+      - name: Verify (macOS)
+        if: runner.os == 'macOS'
+        run: npm run verify
+
+      - name: Verify (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          npm run typecheck
+          npm test
+
+      # electron-builder packages `out/`; it does not create it. That is
+      # electron-vite's job, and locally `npm run dist` chains the two. Calling
+      # the builder directly without this step packaged an app.asar with no
+      # entry point in it: "out/main/index.js was not found in this archive".
+      - name: Build main, preload and renderer
+        run: npm run build
+
+      - name: Build the installer
+        run: ${{ matrix.build }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          if-no-files-found: error
+          path: |
+            release/*.dmg
+            release/*.exe
+            release/*.blockmap
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-installer'
+          path: release-assets
+          merge-multiple: true
+
+      - name: Confirm release assets
+        run: ls -lh release-assets
+
+      # The website links to GitHub Release assets, not transient workflow
+      # artifacts. Publishing only after both platform-specific afterPack
+      # checks pass ensures its Windows link can never point at a Mac-built
+      # native addon.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            release-assets/*.dmg \
+            release-assets/*.exe \
+            release-assets/*.blockmap \
+            --title "Magistral ${GITHUB_REF_NAME#v}" \
+            --generate-notes

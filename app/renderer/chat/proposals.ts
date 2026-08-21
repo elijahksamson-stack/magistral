@@ -97,9 +97,15 @@ export function listProposals(
     labels.filter((label) => proposedLabels.has(normalizeLabel(label))).map(nodeKey);
 
   const nodes: ProposalItem[] = realNewNodes.map((node) => {
-    const detail = node.group
+    const base = node.group
       ? `${NODE_KIND_LABEL[node.kind]}, in "${node.group}"`
       : NODE_KIND_LABEL[node.kind];
+    // Accepting one of these writes a cell with facets beneath it, so the count
+    // belongs in the review. Otherwise the author ticks "new concept" and gets
+    // five more things on their map than the line they read promised.
+    const facetCount = node.subConcepts?.length ?? 0;
+    const detail =
+      facetCount > 0 ? `${base}, with ${facetCount} subnode${facetCount === 1 ? '' : 's'}` : base;
     return {
       key: nodeKey(node.label),
       kind: 'node',

@@ -81,10 +81,90 @@
 }
 
 .subList,
-.connList {
+.connList,
+.mentions {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.figures {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.figures li {
+  margin-bottom: 8px;
+}
+
+.figures img {
+  display: block;
+  width: 100%;
+  /* Capped so a tall screenshot cannot push everything else off the panel. */
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: var(--bd-radius-sm);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.figures span {
+  display: block;
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.34);
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+  word-break: break-all;
+}
+
+.mentionHint {
+  margin: 0 0 7px;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.mentions li {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 9px;
+  margin-bottom: 5px;
+  /* Dashed, not solid: this is a link that does not exist yet. */
+  border-left: 2px dashed var(--bd-accent-dim);
+  border-radius: 0 var(--bd-radius-sm) var(--bd-radius-sm) 0;
+  background: rgba(255, 255, 255, 0.04);
+  line-height: 1.4;
+}
+
+.mentionExcerpt {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+}
+
+.mentionActions {
+  display: flex;
+  gap: 8px;
+}
+
+.mentionActions button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: var(--bd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.mentionActions button:hover {
+  color: var(--bd-text-bright);
+}
+
+.mentionActions .mentionLink {
+  color: var(--bd-signal);
 }
 
 .sub {

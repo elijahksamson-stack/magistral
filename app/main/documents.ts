@@ -7,11 +7,12 @@
  * author can act on rather than a stack trace.
  */
 
-import { promises as fs } from 'node:fs';
+import { promises as fs, type Dirent } from 'node:fs';
 import path from 'node:path';
 import { dialog, type BrowserWindow } from 'electron';
 
 import { DOCUMENT_CHAR_LIMIT, type SourceDocument } from '../../shared/types/claude';
+
 import { createLogger, errorMessage } from './logger';
 
 const log = createLogger('documents');
@@ -149,6 +150,219 @@ export async function readDocument(filePath: string): Promise<SourceDocument> {
   const { text, isTruncated } = truncate(normalized);
   log.info('imported document', `${name} (${text.length} chars${isTruncated ? ', truncated' : ''})`);
   return { name, text, isTruncated };
+}
+
+// ---------------------------------------------------------------------------
+// Folders
+//
+// A folder is imported as ONE document whose text is an outline: the folder,
+// its subdirectories, and the files beneath each. The structure is the point —
+// the directory becomes the concept and each subdirectory becomes one of its
+// sub-concepts, so a hierarchy the author already built by hand does not have
+// to be inferred back out of prose.
+// ---------------------------------------------------------------------------
+
+/** Depth below the chosen folder that still becomes structure. */
+const MAX_FOLDER_DEPTH = 3;
+/** Ceiling on files read from one folder, whatever their size. */
+const MAX_FOLDER_FILES = 200;
+
+/**
+ * Directories that are never knowledge, only machinery. Reading them spends the
+ * character budget on lockfiles and build output, burying whatever the author
+ * actually wrote.
+ */
+const IGNORED_DIRECTORIES = new Set([
+  'node_modules',
+  '.git',
+  '.svn',
+  '.hg',
+  'dist',
+  'build',
+  'out',
+  'target',
+  'venv',
+  '.venv',
+  '__pycache__',
+  '.next',
+  '.cache',
+  'vendor',
+]);
+
+function isReadableName(name: string): boolean {
+  // A dotfile is configuration or metadata; neither belongs on a concept map.
+  return !name.startsWith('.') && !IGNORED_DIRECTORIES.has(name);
+}
+
+function isSupported(filePath: string): boolean {
+  const extension = path.extname(filePath).slice(1).toLowerCase();
+  return (SUPPORTED_EXTENSIONS as readonly string[]).includes(extension);
+}
+
+interface FolderBranch {
+  /** Directory name, or '' for files sitting directly in the chosen folder. */
+  readonly name: string;
+  readonly files: { name: string; text: string }[];
+}
+
+/** Read one file, returning null rather than failing the whole import. */
+async function readFileForFolder(filePath: string, budget: number): Promise<string | null> {
+  if (budget <= 0) return null;
+  try {
+    const stats = await fs.stat(filePath);
+    if (!stats.isFile() || stats.size > MAX_FILE_BYTES) return null;
+    const extension = path.extname(filePath).slice(1).toLowerCase();
+    const normalized = normalizeWhitespace(await readByExtension(extension, filePath));
+    return normalized.length > 0 ? normalized.slice(0, budget) : null;
+  } catch (error: unknown) {
+    // One unreadable file in a folder of fifty is not a failed import.
+    log.info('skipped a file while importing a folder', `${filePath}: ${errorMessage(error)}`);
+    return null;
+  }
+}
+
+/** Every supported file under `dir`, depth-first, sharing one file cap. */
+async function collectFiles(
+  dir: string,
+  depth: number,
+  budget: { files: number },
+): Promise<string[]> {
+  if (depth > MAX_FOLDER_DEPTH || budget.files <= 0) return [];
+
+  let entries: Dirent[];
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const found: string[] = [];
+  for (const entry of [...entries].sort((a, b) => a.name.localeCompare(b.name))) {
+    if (!isReadableName(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      found.push(...(await collectFiles(full, depth + 1, budget)));
+    } else if (entry.isFile() && isSupported(full) && budget.files > 0) {
+      budget.files -= 1;
+      found.push(full);
+    }
+  }
+  return found;
+}
+
+/**
+ * Read a folder into one outlined document.
+ *
+ * The character budget is split evenly across the branches rather than spent
+ * first-come. Otherwise one large subdirectory consumes the whole limit and
+ * every later one arrives empty — putting a subnode on the map with nothing
+ * said about it, which is the exact failure this feature exists to avoid.
+ */
+export async function readFolder(dirPath: string): Promise<SourceDocument> {
+  const name = path.basename(dirPath);
+
+  let stats: Awaited<ReturnType<typeof fs.stat>>;
+  try {
+    stats = await fs.stat(dirPath);
+  } catch (error: unknown) {
+    throw new Error(`Could not open ${name}: ${errorMessage(error)}`);
+  }
+  if (!stats.isDirectory()) throw new Error(`${name} is not a folder.`);
+
+  let children: Dirent[];
+  try {
+    children = await fs.readdir(dirPath, { withFileTypes: true });
+  } catch (error: unknown) {
+    throw new Error(`Could not read ${name}: ${errorMessage(error)}`);
+  }
+
+  const readable = [...children]
+    .filter((entry) => isReadableName(entry.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const subdirectories = readable.filter((entry) => entry.isDirectory());
+  const looseFiles = readable.filter(
+    (entry) => entry.isFile() && isSupported(path.join(dirPath, entry.name)),
+  );
+
+  if (subdirectories.length === 0 && looseFiles.length === 0) {
+    throw new Error(`${name} has no readable documents in it.`);
+  }
+
+  const fileBudget = { files: MAX_FOLDER_FILES };
+  const branchCount = subdirectories.length + (looseFiles.length > 0 ? 1 : 0);
+  const perBranch = Math.floor(DOCUMENT_CHAR_LIMIT / Math.max(branchCount, 1));
+
+  const branches: FolderBranch[] = [];
+
+  if (looseFiles.length > 0) {
+    const files: FolderBranch['files'] = [];
+    let remaining = perBranch;
+    for (const entry of looseFiles) {
+      const text = await readFileForFolder(path.join(dirPath, entry.name), remaining);
+      if (text === null) continue;
+      remaining -= text.length;
+      files.push({ name: entry.name, text });
+    }
+    if (files.length > 0) branches.push({ name: '', files });
+  }
+
+  for (const directory of subdirectories) {
+    const full = path.join(dirPath, directory.name);
+    const files: FolderBranch['files'] = [];
+    let remaining = perBranch;
+    for (const filePath of await collectFiles(full, 1, fileBudget)) {
+      const text = await readFileForFolder(filePath, remaining);
+      if (text === null) continue;
+      remaining -= text.length;
+      files.push({ name: path.relative(full, filePath), text });
+    }
+    // A subdirectory with nothing readable still names something the author
+    // made, so it stays in the outline — with no text rather than no entry.
+    branches.push({ name: directory.name, files });
+  }
+
+  const sections = [`# Folder: ${name}`];
+  for (const branch of branches) {
+    sections.push(
+      branch.name.length > 0
+        ? `## Subfolder: ${branch.name}`
+        : '## Files directly in this folder',
+    );
+    if (branch.files.length === 0) {
+      sections.push('(no readable documents in it)');
+      continue;
+    }
+    for (const file of branch.files) {
+      sections.push(`### File: ${file.name}\n${file.text}`);
+    }
+  }
+
+  const { text, isTruncated } = truncate(sections.join('\n\n'));
+  const readCount = branches.reduce((total, branch) => total + branch.files.length, 0);
+  log.info(
+    'imported folder',
+    `${name} (${subdirectories.length} subfolders, ${readCount} files, ${text.length} chars${isTruncated ? ', truncated' : ''})`,
+  );
+  return { name, text, isTruncated, isFolder: true };
+}
+
+/** Show the folder picker and read what the author chose. Null if dismissed. */
+export async function pickAndReadFolder(
+  window: BrowserWindow | null,
+): Promise<SourceDocument | null> {
+  const options: Electron.OpenDialogOptions = {
+    title: 'Import a folder to distill',
+    properties: ['openDirectory'],
+  };
+
+  const result = window
+    ? await dialog.showOpenDialog(window, options)
+    : await dialog.showOpenDialog(options);
+
+  const chosen = result.filePaths[0];
+  if (result.canceled || !chosen) return null;
+
+  return readFolder(chosen);
 }
 
 /** Show the open dialog and read what the author picked. Null if dismissed. */

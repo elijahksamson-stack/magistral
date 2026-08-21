@@ -142,7 +142,10 @@ describe('importing documents', () => {
   it('removes AI writing controls when no local CLI is usable', async () => {
     await renderPane(false);
 
-    expect(screen.queryByRole('button', { name: /import/i })).toBeNull();
+    // queryAll, not query: there are two import buttons now — document and
+    // folder — and queryByRole throws on more than one match rather than
+    // reporting the absence this asserts.
+    expect(screen.queryAllByRole('button', { name: /import/i })).toHaveLength(0);
     expect(screen.queryByText(/next to any cell/i)).toBeNull();
   });
 
@@ -150,7 +153,7 @@ describe('importing documents', () => {
     const user = userEvent.setup();
     await renderPane();
 
-    await user.click(await screen.findByRole('button', { name: /import/i }));
+    await user.click(await screen.findByRole('button', { name: /import & distil a document/i }));
 
     await waitFor(() => {
       const runs = invokedRuns.filter(
@@ -164,7 +167,7 @@ describe('importing documents', () => {
     const user = userEvent.setup();
     await renderPane();
 
-    const importButton = await screen.findByRole('button', { name: /import/i });
+    const importButton = await screen.findByRole('button', { name: /import & distil a document/i });
 
     await user.click(importButton);
     await waitFor(() => expect(invokedRuns).toHaveLength(1));

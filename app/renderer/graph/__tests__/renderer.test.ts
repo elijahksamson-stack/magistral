@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import type { GraphEdge, GraphNode } from '../../../../shared/types/graph';
-import { CANVAS_BACKGROUND, DISCOVERY_COLOR, LABEL_ZOOM_MEDIUM } from '../constants';
+import {
+  CANVAS_BACKGROUND,
+  DISCOVERY_COLOR,
+  EDGE_HIGHLIGHT_COLOR,
+  LABEL_ZOOM_MEDIUM,
+  RELATION_COLORS,
+} from '../constants';
 import { FLOW_DOTS_PER_EDGE } from '../flow';
 import { renderGraph, type RenderScene } from '../renderer';
 import type { Viewport } from '../viewport';
@@ -33,6 +39,45 @@ function makeScene(
     ...overrides,
   };
 }
+
+describe('renderGraph relationship colour', () => {
+  const nodes = [
+    makeNode('a', { x: 40, y: 40 }),
+    makeNode('b', { x: 90, y: 90 }),
+    makeNode('c', { x: 140, y: 60 }),
+  ];
+
+  test('strokes each relation in its own colour', () => {
+    // Arrange
+    const edges = [
+      makeEdge('e1', 'a', 'b', { relation: 'causes' }),
+      makeEdge('e2', 'b', 'c', { relation: 'contradicts' }),
+    ];
+    const ctx = new FakeCanvasContext(CANVAS_SIZE, CANVAS_SIZE);
+
+    // Act
+    renderGraph(ctx, makeScene(nodes, edges));
+
+    // Assert
+    expect(ctx.strokeColors).toContain(RELATION_COLORS.causes);
+    expect(ctx.strokeColors).toContain(RELATION_COLORS.contradicts);
+    expect(RELATION_COLORS.causes).not.toBe(RELATION_COLORS.contradicts);
+  });
+
+  /*
+   * What the pointer is touching matters more in the moment than what the
+   * relation means, so the highlight has to win over the relation's colour.
+   */
+  test('the highlight still overrides the relation colour', () => {
+    const edges = [makeEdge('e1', 'a', 'b', { relation: 'causes' })];
+    const ctx = new FakeCanvasContext(CANVAS_SIZE, CANVAS_SIZE);
+
+    renderGraph(ctx, makeScene(nodes, edges, { highlightIds: new Set(['a', 'b']) }));
+
+    expect(ctx.strokeColors).toContain(EDGE_HIGHLIGHT_COLOR);
+    expect(ctx.strokeColors).not.toContain(RELATION_COLORS.causes);
+  });
+});
 
 describe('renderGraph culling', () => {
   test('draws only the nodes and edges near the viewport', () => {

@@ -11,7 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { readDocument, SUPPORTED_EXTENSIONS } from './documents';
+import { readDocument, readFolder, SUPPORTED_EXTENSIONS } from './documents';
 import { DOCUMENT_CHAR_LIMIT } from '../../shared/types/claude';
 
 let dir: string;
@@ -221,5 +221,111 @@ describe('readDocument', () => {
     const file = path.join(dir, 'broken.pdf');
     await fs.writeFile(file, 'not a pdf at all');
     await expect(readDocument(file)).rejects.toThrow(/Could not read broken\.pdf/);
+  });
+});
+
+/*
+ * Folder import. The structure is the deliverable: the directory becomes the
+ * concept and each subdirectory becomes one of its sub-concepts, so the outline
+ * has to name every subfolder — including the ones with nothing readable in
+ * them, which would otherwise vanish off the map silently.
+ */
+describe('readFolder', () => {
+  let root: string;
+
+  beforeAll(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'braindump-folder-'));
+
+    await fs.mkdir(path.join(root, 'Energy'), { recursive: true });
+    await fs.writeFile(path.join(root, 'Energy', 'grid.md'), 'Gas sets the clearing price.');
+
+    await fs.mkdir(path.join(root, 'Semis'), { recursive: true });
+    await fs.writeFile(path.join(root, 'Semis', 'euv.md'), 'One supplier for EUV lithography.');
+    // Nested one level deeper, to prove depth is walked rather than ignored.
+    await fs.mkdir(path.join(root, 'Semis', 'Packaging'), { recursive: true });
+    await fs.writeFile(path.join(root, 'Semis', 'Packaging', 'cowos.md'), 'Advanced packaging.');
+
+    await fs.mkdir(path.join(root, 'Empty'), { recursive: true });
+
+    await fs.writeFile(path.join(root, 'readme.md'), 'What this collection is.');
+
+    await fs.mkdir(path.join(root, 'node_modules'), { recursive: true });
+    await fs.writeFile(path.join(root, 'node_modules', 'pkg.md'), 'MACHINERY, NOT KNOWLEDGE');
+    await fs.writeFile(path.join(root, '.secret.md'), 'HIDDEN FILE CONTENT');
+  });
+
+  afterAll(async () => {
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it('names the folder and marks the document as one', async () => {
+    const document = await readFolder(root);
+
+    expect(document.name).toBe(path.basename(root));
+    expect(document.isFolder).toBe(true);
+    expect(document.text).toContain(`# Folder: ${path.basename(root)}`);
+  });
+
+  it('gives every subfolder its own section, in name order', async () => {
+    const { text } = await readFolder(root);
+
+    expect(text).toContain('## Subfolder: Energy');
+    expect(text).toContain('## Subfolder: Semis');
+    expect(text.indexOf('## Subfolder: Energy')).toBeLessThan(text.indexOf('## Subfolder: Semis'));
+  });
+
+  it('carries the text of the files inside each subfolder', async () => {
+    const { text } = await readFolder(root);
+
+    expect(text).toContain('Gas sets the clearing price.');
+    expect(text).toContain('One supplier for EUV lithography.');
+  });
+
+  it('walks below the first level rather than stopping at it', async () => {
+    expect((await readFolder(root)).text).toContain('Advanced packaging.');
+  });
+
+  /*
+   * A subfolder the author made is a concept they meant, even when it holds
+   * nothing readable yet. Dropping it would silently lose a subnode.
+   */
+  it('keeps a subfolder with nothing readable in it', async () => {
+    const { text } = await readFolder(root);
+
+    expect(text).toContain('## Subfolder: Empty');
+    expect(text).toContain('(no readable documents in it)');
+  });
+
+  it('keeps loose files sitting directly in the folder', async () => {
+    const { text } = await readFolder(root);
+
+    expect(text).toContain('## Files directly in this folder');
+    expect(text).toContain('What this collection is.');
+  });
+
+  it('skips machinery and hidden files rather than spending the budget on them', async () => {
+    const { text } = await readFolder(root);
+
+    expect(text).not.toContain('MACHINERY, NOT KNOWLEDGE');
+    expect(text).not.toContain('node_modules');
+    expect(text).not.toContain('HIDDEN FILE CONTENT');
+  });
+
+  it('stays inside the character limit the CLI can accept', async () => {
+    expect((await readFolder(root)).text.length).toBeLessThanOrEqual(DOCUMENT_CHAR_LIMIT);
+  });
+
+  it('says so plainly when there is nothing to import', async () => {
+    const bare = await fs.mkdtemp(path.join(os.tmpdir(), 'braindump-bare-'));
+    try {
+      await expect(readFolder(bare)).rejects.toThrow(/no readable documents/);
+    } finally {
+      await fs.rm(bare, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a file handed to it as a folder', async () => {
+    const file = path.join(root, 'readme.md');
+    await expect(readFolder(file)).rejects.toThrow(/is not a folder/);
   });
 });

@@ -7,6 +7,7 @@ import {
   type ConnectionScope,
 } from './connectionTypes';
 import styles from './GraphToolbar.module.css';
+import { RELATION_COLORS } from './constants';
 import { CATEGORY_COLORS, CATEGORY_GLYPHS } from '../shared/entityPresentation';
 
 interface GraphToolbarProps {
@@ -19,6 +20,14 @@ interface GraphToolbarProps {
   connectSourceLabel?: string;
   nodeKinds: ReadonlySet<NodeKind>;
   relations: ReadonlySet<RelationKind>;
+  /**
+   * The relation kinds this graph actually uses, for the legend.
+   *
+   * A legend listing all ten kinds asks the reader to search it for the three
+   * their map contains. The Filters panel still offers every kind, because a
+   * filter is about what you MIGHT see; a legend is about what you ARE seeing.
+   */
+  presentRelations: readonly RelationKind[];
   connectionScope: ConnectionScope;
   onFocusOnlyChange: (value: boolean) => void;
   onConnectModeChange: (value: boolean) => void;
@@ -44,6 +53,7 @@ export default function GraphToolbar({
   connectSourceLabel,
   nodeKinds,
   relations,
+  presentRelations,
   connectionScope,
   onFocusOnlyChange,
   onConnectModeChange,
@@ -174,6 +184,11 @@ export default function GraphToolbar({
                     checked={relations.has(relation)}
                     onChange={() => onToggleRelation(relation)}
                   />
+                  <span
+                    className={styles.swatch}
+                    style={{ background: RELATION_COLORS[relation] }}
+                    aria-hidden="true"
+                  />
                   {readable(relation)}
                 </label>
               ))}
@@ -197,6 +212,22 @@ export default function GraphToolbar({
             </span>
           ))}
           <small>Ring colour and shape identify category. Selection is cyan; AI findings are lime.</small>
+
+          {presentRelations.length > 0 ? (
+            <>
+              <strong className={styles.legendHeading}>Relationships on this map</strong>
+              {presentRelations.map((relation) => (
+                <span key={relation}>
+                  <i
+                    aria-hidden="true"
+                    className={styles.legendEdge}
+                    style={{ background: RELATION_COLORS[relation] }}
+                  />
+                  {readable(relation)}
+                </span>
+              ))}
+            </>
+          ) : null}
         </div>
       </details>
     </div>

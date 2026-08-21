@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 
 import type { GraphEdge, GraphNode, SubConcept } from '../../../shared/types/graph';
 import styles from './NodeDetail.module.css';
+import type { UnlinkedMention } from './unlinkedMentions';
 import DescriptionEditor from './DescriptionEditor';
 import { CATEGORY_COLORS, CATEGORY_GLYPHS } from '../shared/entityPresentation';
 
@@ -58,6 +59,24 @@ export interface NodeDetailProps {
   onGenerateDescription?: (() => void) | undefined;
   isGenerating?: boolean;
   generateHint?: string;
+  /**
+   * Places this concept is named in prose without being linked.
+   *
+   * The map only knows what the author bracketed, so text written before a
+   * concept existed keeps saying its name and the graph never learns about it.
+   * Surfacing them here is what turns writing already done into edges.
+   */
+  unlinkedMentions?: readonly UnlinkedMention[];
+  /**
+   * Images this concept's cell embeds, already read as data URLs.
+   *
+   * Resolved by the pane rather than fetched here: the panel is a pure view,
+   * and a component that reaches for IPC on mount is one that cannot be
+   * rendered in a test without a bridge behind it.
+   */
+  images?: readonly { readonly fileName: string; readonly dataUrl: string }[];
+  /** Brackets one mention, promoting it to a link. Absent leaves them read-only. */
+  onLinkMention?: ((mention: UnlinkedMention) => void) | undefined;
   onClose: () => void;
 }
 
@@ -77,6 +96,9 @@ export default function NodeDetail({
   onGenerateDescription,
   isGenerating,
   generateHint,
+  unlinkedMentions = [],
+  onLinkMention,
+  images = [],
   onClose,
 }: NodeDetailProps) {
   const rootRef = useRef<HTMLElement>(null);
@@ -349,6 +371,52 @@ export default function NodeDetail({
             </>
           )}
         </div>
+      ) : null}
+
+      {images.length > 0 ? (
+        <section className={styles.section}>
+          <h4 className={styles.heading}>Images · {images.length}</h4>
+          <ul className={styles.figures}>
+            {images.map((image) => (
+              <li key={image.fileName}>
+                {/* The filename is the caption: it is what the cell says, and
+                    what the author types to refer to the figure again. */}
+                <img src={image.dataUrl} alt={image.fileName} />
+                <span>{image.fileName}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {unlinkedMentions.length > 0 ? (
+        <section className={styles.section}>
+          <h4 className={styles.heading}>Mentioned, not linked · {unlinkedMentions.length}</h4>
+          <p className={styles.mentionHint}>
+            Named here in plain text. Linking it draws the relationship.
+          </p>
+          <ul className={styles.mentions}>
+            {unlinkedMentions.map((mention) => (
+              <li key={`${mention.cellId}:${mention.index}`}>
+                <span className={styles.mentionExcerpt}>{mention.excerpt}</span>
+                <span className={styles.mentionActions}>
+                  <button type="button" onClick={() => onOpenCell(mention.cellId)}>
+                    Open
+                  </button>
+                  {onLinkMention ? (
+                    <button
+                      type="button"
+                      className={styles.mentionLink}
+                      onClick={() => onLinkMention(mention)}
+                    >
+                      Link it
+                    </button>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {sourceCellId ? (

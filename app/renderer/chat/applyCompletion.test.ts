@@ -104,6 +104,61 @@ function deps(overrides: Partial<ApplyDeps> = {}): ApplyDeps & { calls: string[]
   } as ApplyDeps & { calls: string[] };
 }
 
+/*
+ * A concept the chat proposed with facets beneath it. Accepting one has to
+ * write BOTH — a node whose sub-concepts live only in the proposal would show
+ * them in review and then lose them on apply.
+ */
+describe('a concept accepted with subnodes', () => {
+  const withFacets: MapCompletion = {
+    ...EMPTY,
+    newNodes: [
+      {
+        label: 'Self-hosted inference',
+        kind: 'concept',
+        note: 'Capable models running on ordinary machines.',
+        subConcepts: [
+          { label: 'Local model weights', note: 'Downloaded once, run offline.' },
+          { label: 'Consumer GPU ceiling' },
+        ],
+      },
+    ],
+  };
+
+  it('writes the facets into the cell, so the core derives them back', async () => {
+    const applyDeps = deps();
+
+    const report = await applyCompletion(
+      withFacets,
+      new Set([nodeKey('Self-hosted inference')]),
+      GRAPH,
+      applyDeps,
+    );
+
+    expect(report.failures).toEqual([]);
+    const written = applyDeps.calls.find((call) => call.startsWith('createCell:')) ?? '';
+    expect(written).toContain('[[Self-hosted inference]]');
+    expect(written).toContain('Capable models running on ordinary machines.');
+    expect(written).toContain('[[Local model weights]]');
+    expect(written).toContain('Downloaded once, run offline.');
+    // A facet with nothing said about it is still a facet.
+    expect(written).toContain('[[Consumer GPU ceiling]]');
+  });
+
+  it('still writes the plain one-line cell when there are no facets', async () => {
+    const applyDeps = deps();
+
+    await applyCompletion(
+      { ...EMPTY, newNodes: [{ label: 'Heat Rate', kind: 'metric', note: 'Fuel per unit.' }] },
+      new Set([nodeKey('Heat Rate')]),
+      GRAPH,
+      applyDeps,
+    );
+
+    expect(applyDeps.calls).toContain('createCell:[[Heat Rate]] Fuel per unit.');
+  });
+});
+
 describe('the cell an accepted concept becomes', () => {
   it('is what the author would have typed', () => {
     // The Editor lists CELLS. A node created without one never appears there

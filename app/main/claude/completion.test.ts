@@ -302,6 +302,68 @@ describe('adding to groups', () => {
   });
 });
 
+/*
+ * subConcepts is the field an answer uses to say "this concept arrives with
+ * named parts". It is model output, so nothing here is trusted: shape, count
+ * and duplication are all enforced on the way in.
+ */
+describe('facets proposed beneath a concept', () => {
+  it('reads label and note off each facet', () => {
+    const parsed = parseCompletion(
+      '{"newNodes":[{"label":"Self-hosted inference","kind":"concept","subConcepts":[' +
+        '{"label":"Local weights","note":"Downloaded once."},{"label":"GPU ceiling"}]}]}',
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.newNodes[0]?.subConcepts).toEqual([
+      { label: 'Local weights', note: 'Downloaded once.' },
+      { label: 'GPU ceiling' },
+    ]);
+  });
+
+  it('accepts a bare list of names, which is half of what models return', () => {
+    const parsed = parseCompletion(
+      '{"newNodes":[{"label":"X","kind":"concept","subConcepts":["Alpha","Beta"]}]}',
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.newNodes[0]?.subConcepts).toEqual([{ label: 'Alpha' }, { label: 'Beta' }]);
+  });
+
+  it('drops duplicates and empties rather than writing them into the cell', () => {
+    const parsed = parseCompletion(
+      '{"newNodes":[{"label":"X","kind":"concept","subConcepts":["Alpha","alpha","  ","Beta"]}]}',
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.newNodes[0]?.subConcepts).toEqual([{ label: 'Alpha' }, { label: 'Beta' }]);
+  });
+
+  it('caps a runaway list, because every facet becomes a link in the cell', () => {
+    const many = Array.from({ length: 40 }, (_, index) => `"Facet ${index}"`).join(',');
+    const parsed = parseCompletion(
+      `{"newNodes":[{"label":"X","kind":"concept","subConcepts":[${many}]}]}`,
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.newNodes[0]?.subConcepts?.length).toBe(12);
+  });
+
+  it('leaves the field off entirely when the model sent nothing usable', () => {
+    const parsed = parseCompletion(
+      '{"newNodes":[{"label":"X","kind":"concept","subConcepts":"nope"}]}',
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.newNodes[0]?.subConcepts).toBeUndefined();
+  });
+});
+
 describe('parsing what the model returned', () => {
   it('reads a fenced block', () => {
     const parsed = parseCompletion('Here you go:\n```json\n{"newNodes":[{"label":"X","kind":"concept"}]}\n```');

@@ -40,6 +40,23 @@
         "GCC_ENABLE_CPP_RTTI": "YES",
         "MACOSX_DEPLOYMENT_TARGET": "13.5",
         "OTHER_CFLAGS": ["-fexceptions"]
+      },
+      # MSVC reads none of the settings above: "cflags" is GCC/clang and
+      # "xcode_settings" is macOS. Without this block a Windows build gets
+      # MSBuild's defaults — C++14, no exception handling — while
+      # NAPI_CPP_EXCEPTIONS above tells node-addon-api to throw. That
+      # combination does not compile, and where it does it yields an addon
+      # whose error paths are undefined.
+      #
+      # /utf-8 is not cosmetic: ten files under core/src carry em dashes in
+      # their comments, and MSVC without it reads the source in the system
+      # codepage and rejects them.
+      "msvs_settings": {
+        "VCCLCompilerTool": {
+          "ExceptionHandling": 1,
+          "RuntimeTypeInfo": "true",
+          "AdditionalOptions": ["/std:c++17", "/utf-8"]
+        }
       }
     }
   ]

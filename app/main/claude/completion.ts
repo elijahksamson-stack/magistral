@@ -18,6 +18,7 @@ import {
   type ConnectionScope,
   type MapCompletion,
   type MapSnapshot,
+  type ProposedSubConcept,
   type RejectedChange,
   type ValidatedCompletion,
 } from '../../../shared/types/completion';
@@ -46,6 +47,35 @@ function asNodeKind(value: unknown): NodeKind {
 function asRelation(value: unknown): RelationKind | null {
   const relation = asString(value) as RelationKind;
   return RELATION_KINDS.includes(relation) ? relation : null;
+}
+
+/**
+ * Facets beneath a proposed concept, deduplicated and capped.
+ *
+ * The cap is the point. A model asked for sub-concepts will happily return
+ * thirty, and each one becomes a `[[link]]` in the cell — which the core then
+ * reads back as thirty facets on a node the author has not even accepted yet.
+ * Tolerates a bare string as well as an object, because that is what a model
+ * returns roughly half the time when the field holds a list of names.
+ */
+const MAX_PROPOSED_SUBCONCEPTS = 12;
+
+function asSubConcepts(value: unknown): ProposedSubConcept[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const facets: ProposedSubConcept[] = [];
+  for (const entry of value) {
+    const label = typeof entry === 'string' ? entry.trim() : asString(asRecord(entry).label);
+    const key = normalizeLabel(label);
+    if (label.length === 0 || key.length === 0 || seen.has(key)) continue;
+    seen.add(key);
+
+    const note = typeof entry === 'string' ? '' : asString(asRecord(entry).note);
+    facets.push(note ? { label, note } : { label });
+    if (facets.length >= MAX_PROPOSED_SUBCONCEPTS) break;
+  }
+  return facets;
 }
 
 /**
@@ -90,6 +120,8 @@ export function parseCompletion(text: string): { ok: true; value: MapCompletion 
         if (note) node.note = note;
         const group = asString(record.group);
         if (group) node.group = group;
+        const subConcepts = asSubConcepts(record.subConcepts);
+        if (subConcepts.length > 0) node.subConcepts = subConcepts;
         return node;
       }),
       newEdges: list('newEdges').map((entry) => {

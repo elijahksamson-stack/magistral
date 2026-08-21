@@ -177,6 +177,15 @@ export interface SourceDocument {
   text: string;
   /** True when the file was longer than the limit and was cut. */
   isTruncated: boolean;
+  /**
+   * True when this is a whole folder rather than one file.
+   *
+   * A folder already carries the structure the author wants on the map — the
+   * directory is the concept and its subdirectories are its parts — so the
+   * distillation is told to preserve that shape rather than infer one. The text
+   * is then an outline: the folder, its subdirectories, and their files.
+   */
+  isFolder?: boolean;
 }
 
 /**

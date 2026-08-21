@@ -75,6 +75,18 @@ export interface MapSnapshot {
   edges: MapEdge[];
 }
 
+/**
+ * A facet proposed beneath a new concept.
+ *
+ * Distinct from a ProposedNode: this becomes a later `[[link]]` inside the new
+ * concept's cell, not a concept of its own. The core derives it back out as a
+ * sub-concept, exactly as if the author had typed the cell by hand.
+ */
+export interface ProposedSubConcept {
+  label: string;
+  note?: string;
+}
+
 /** A concept the graph does not have yet. */
 export interface ProposedNode {
   label: string;
@@ -83,6 +95,15 @@ export interface ProposedNode {
   note?: string;
   /** Label of a group to place it in. Must already exist. */
   group?: string;
+  /**
+   * Facets to write beneath it, when the concept arrives with parts.
+   *
+   * Optional, and usually absent: a proposal that invents five sub-concepts for
+   * every new node buries the author in structure they never asked for. It earns
+   * its place when the parts are genuinely given — a folder with subdirectories,
+   * or an answer that distinguishes facets of one idea.
+   */
+  subConcepts?: ProposedSubConcept[];
 }
 
 /** A relationship to draw between two concepts, by label. */

@@ -268,6 +268,48 @@
   cursor: default;
 }
 
+/*
+ * Quiet when off, lit when on. It is a standing instruction rather than an
+ * action, so it must not compete with "Find relationships" — the author should
+ * see at a glance whether it is armed, and never mistake it for a button that
+ * does something right now.
+ */
+.autoMap,
+.autoMapOn {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--bd-border);
+  border-radius: var(--bd-radius-sm);
+  background: transparent;
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--bd-transition), border-color var(--bd-transition),
+    background var(--bd-transition);
+}
+
+.autoMapOn {
+  border-color: color-mix(in srgb, var(--bd-signal) 45%, transparent);
+  background: var(--bd-signal-wash);
+  color: var(--bd-signal);
+}
+
+.autoMap:not(:disabled):hover,
+.autoMapOn:not(:disabled):hover {
+  border-color: var(--bd-signal);
+  color: var(--bd-text-bright);
+}
+
+.autoMap:disabled,
+.autoMapOn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .completeButton:not(:disabled):hover {
   background: color-mix(in srgb, var(--bd-signal) 16%, transparent);
   border-color: var(--bd-signal);

@@ -231,3 +231,33 @@
   color: var(--bd-text-faint);
   line-height: 1.4;
 }
+
+/* Spans both columns so the relations below it read as their own group. */
+.legendHeading {
+  grid-column: 1 / -1;
+  padding-top: 8px;
+  border-top: 1px solid var(--bd-border);
+  color: var(--bd-text-faint);
+  font-family: var(--bd-font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* A line, not a dot: it stands for an edge, and reads as one at this size. */
+.legend .legendEdge {
+  width: 12px;
+  height: 2px;
+  align-self: center;
+  border-radius: 1px;
+}
+
+/* The same line beside each Filters checkbox, so both panels agree. */
+.swatch {
+  width: 10px;
+  height: 2px;
+  flex: none;
+  align-self: center;
+  border-radius: 1px;
+}

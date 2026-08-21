@@ -27,6 +27,16 @@ export interface MessageListProps {
   onRetry?: (turn: RenderedTurn) => void;
   onSwitchProvider?: (turn: RenderedTurn) => void;
   onDismissError?: (turnId: string) => void;
+  /**
+   * Turn this answer into proposed concepts, subnodes and relationships.
+   *
+   * The answer that says "your graph has no node for X" is the moment the
+   * author most wants X on the map, and until now that meant leaving the
+   * conversation, writing a cell by hand, and retyping what they just read.
+   */
+  onAddToMap?: (turn: RenderedTurn) => void;
+  /** True while a proposal is already being drafted, so this cannot double-fire. */
+  isAddingToMap?: boolean;
 }
 
 export interface RelationshipTraceItem {
@@ -257,6 +267,8 @@ function Turn({
   onRetry,
   onSwitchProvider,
   onDismissError,
+  onAddToMap,
+  isAddingToMap,
 }: {
   turn: RenderedTurn;
   labels: readonly string[];
@@ -268,6 +280,8 @@ function Turn({
   onRetry?: ((turn: RenderedTurn) => void) | undefined;
   onSwitchProvider?: ((turn: RenderedTurn) => void) | undefined;
   onDismissError?: ((turnId: string) => void) | undefined;
+  onAddToMap?: ((turn: RenderedTurn) => void) | undefined;
+  isAddingToMap?: boolean | undefined;
 }): JSX.Element {
   const statusLabel = STATUS_LABELS[turn.status];
 
@@ -314,7 +328,20 @@ function Turn({
             </span>
           ) : null}
           {turn.text.length > 0 && !turn.error && turn.status !== 'pending' && turn.status !== 'streaming' ? (
-            <CopyResponseButton text={turn.text} />
+            <>
+              <CopyResponseButton text={turn.text} />
+              {onAddToMap ? (
+                <button
+                  type="button"
+                  className={styles.addToMap}
+                  disabled={isAddingToMap}
+                  onClick={() => onAddToMap(turn)}
+                  title="Propose the concepts this answer names, with their descriptions and connections. Nothing is added until you approve it."
+                >
+                  {isAddingToMap ? 'Reading the answer…' : '✦ Add to map'}
+                </button>
+              ) : null}
+            </>
           ) : null}
         </footer>
       </article>
@@ -334,6 +361,8 @@ export default function MessageList({
   onRetry,
   onSwitchProvider,
   onDismissError,
+  onAddToMap,
+  isAddingToMap,
 }: MessageListProps): JSX.Element {
   if (turns.length === 0) {
     return <div className={styles.empty}>{emptyState ?? null}</div>;
@@ -354,6 +383,8 @@ export default function MessageList({
           onRetry={onRetry}
           onSwitchProvider={onSwitchProvider}
           onDismissError={onDismissError}
+          onAddToMap={onAddToMap}
+          isAddingToMap={isAddingToMap}
         />
       ))}
     </ol>

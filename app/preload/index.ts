@@ -69,6 +69,9 @@ const INVOKE_CHANNELS = [
 
   'import:yaml',
   'import:document',
+  'import:folder',
+  'image:attach',
+  'image:read',
   'claude:invoke',
   'claude:cancel',
   'claude:active',

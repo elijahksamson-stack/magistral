@@ -19,7 +19,7 @@
 import { normalizeLabel } from '../../../shared/labels';
 import type { ConnectionScope, MapCompletion } from '../../../shared/types/completion';
 import type { KnowledgeGraph, NodeKind, RelationKind } from '../../../shared/types/graph';
-import { cellMarkdownFor } from '../shared/conceptCell';
+import { cellMarkdownFor, nodeCellMarkdownFor } from '../shared/conceptCell';
 import { edgeChangeKey, edgeKey, groupingKey, nodeKey } from './proposals';
 
 /**
@@ -203,7 +203,22 @@ export async function applyCompletion(
      * node back out and reports the concept as not applied.
      */
     try {
-      await deps.createCell(cellMarkdownFor(node.label, node.note));
+      /*
+       * A concept with facets is written the way the author would have written
+       * it: the naming link, its description, then a `[[link]]` per facet. The
+       * core reads those back as sub-concepts, so accepting one proposal yields
+       * the node AND everything beneath it — no second pass, and nothing that
+       * exists only on the canvas.
+       */
+      await deps.createCell(
+        node.subConcepts && node.subConcepts.length > 0
+          ? nodeCellMarkdownFor({
+              label: node.label,
+              ...(node.note ? { note: node.note } : {}),
+              subConcepts: node.subConcepts,
+            })
+          : cellMarkdownFor(node.label, node.note),
+      );
     } catch (cellError: unknown) {
       applied -= 1;
 

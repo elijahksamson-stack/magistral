@@ -133,7 +133,16 @@ describe('naming then saving', () => {
         <Probe onReady={(value) => (store = value)} />
       </GraphStoreProvider>,
     );
-    await waitFor(() => expect(screen.getByTestId('name')).toBeInTheDocument());
+    /*
+     * Wait for the LOADED name, not merely for the element.
+     *
+     * The probe renders a placeholder before the vault opens, so waiting on
+     * presence alone let the rename run while activeVaultId was still null —
+     * where renameVault returns early and the core is never told. That made
+     * this test fail about one run in five, depending on how vitest happened to
+     * schedule the file.
+     */
+    await waitFor(() => expect(screen.getByTestId('name')).toHaveTextContent('Untitled'));
 
     await act(async () => {
       await store!.renameVault('Power Markets');

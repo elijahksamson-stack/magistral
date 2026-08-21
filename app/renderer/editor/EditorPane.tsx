@@ -15,6 +15,7 @@ import { invoke } from '../shared/api';
 import { isStringArray, readPersisted, writePersisted } from '../shared/persisted';
 import type { Cell as CellModel } from '../../../shared/types/graph';
 import { useGraphStore } from '../shared/store';
+import { embedMarkdown } from '../graph/embeds';
 import Cell from './Cell';
 import styles from './EditorPane.module.css';
 import { getErrorMessage } from './errors';
@@ -300,11 +301,13 @@ export default function EditorPane({
    * The cell starts the run itself, so the import lands in the same streaming
    * preview with the same Accept/Reject gate as every other Claude action.
    */
-  const importDocument = useCallback(async (): Promise<void> => {
+  const importFrom = useCallback(async (
+    channel: 'import:document' | 'import:folder',
+  ): Promise<void> => {
     setActionError(null);
     setIsPicking(true);
     try {
-      const { document } = await invoke('import:document', undefined);
+      const { document } = await invoke(channel, undefined);
       // A dismissed file dialog is not an error.
       if (!document) return;
 
@@ -330,6 +333,32 @@ export default function EditorPane({
       setIsPicking(false);
     }
   }, [addCell]);
+
+  /**
+   * Copy an image into the vault and embed it in a new cell.
+   *
+   * Written as `![[file.png]]`, which the wikilink parser skips — an embed is a
+   * file, not a concept, so the image never appears on the canvas as a node
+   * named after its filename. It shows in the concept's detail panel instead.
+   */
+  const attachImage = useCallback(async (): Promise<void> => {
+    if (!graph) return;
+    setActionError(null);
+    setIsPicking(true);
+    try {
+      const { image } = await invoke('image:attach', { vaultId: graph.id });
+      // A dismissed picker is not an error.
+      if (!image) return;
+
+      const cellId = await addCell();
+      await upsertCell(cellId, embedMarkdown(image.fileName));
+      setImportNotice(`Attached ${image.fileName}.`);
+    } catch (cause: unknown) {
+      setActionError(getErrorMessage(cause));
+    } finally {
+      setIsPicking(false);
+    }
+  }, [addCell, graph, upsertCell]);
 
   const clearPendingImport = useCallback((): void => setPendingImport(null), []);
 
@@ -568,7 +597,7 @@ export default function EditorPane({
           <button
             type="button"
             className={styles.importCell}
-            onClick={() => void importDocument()}
+            onClick={() => void importFrom('import:document')}
             disabled={isPicking}
             title="Read a .docx, .md or .txt and distil it into a new cell"
           >
@@ -576,6 +605,35 @@ export default function EditorPane({
             {isPicking ? 'Choosing…' : 'Import & distil a document'}
           </button>
         ) : null}
+
+        {/*
+          A folder arrives with its hierarchy already decided, so it becomes one
+          concept with a sub-concept per subfolder — structure the author built
+          by hand, rather than structure inferred from prose.
+        */}
+        {llmAvailable ? (
+          <button
+            type="button"
+            className={styles.importCell}
+            onClick={() => void importFrom('import:folder')}
+            disabled={isPicking}
+            title="Read a folder into one concept, with a subnode per subfolder"
+          >
+            <span aria-hidden="true">🗀</span>{' '}
+            {isPicking ? 'Choosing…' : 'Import a folder'}
+          </button>
+        ) : null}
+
+        {/* No CLI needed: copying a file into the vault is not a distillation. */}
+        <button
+          type="button"
+          className={styles.importCell}
+          onClick={() => void attachImage()}
+          disabled={isPicking}
+          title="Copy an image into this vault and embed it in a new cell"
+        >
+          <span aria-hidden="true">▨</span> {isPicking ? 'Choosing…' : 'Attach an image'}
+        </button>
       </footer>
     </section>
   );

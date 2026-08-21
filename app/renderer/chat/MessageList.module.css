@@ -200,6 +200,39 @@
   color: var(--bd-success);
 }
 
+/*
+ * Sits after Copy, which already carries the margin-left:auto that pushes the
+ * pair to the right edge of the footer.
+ */
+.addToMap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bd-text-faint);
+  font: inherit;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--bd-transition), background var(--bd-transition);
+}
+
+.addToMap:hover:not(:disabled),
+.addToMap:focus-visible:not(:disabled) {
+  background: var(--bd-accent-wash);
+  color: var(--bd-accent-bright, var(--bd-text));
+  outline: none;
+}
+
+.addToMap:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
 .status[data-status='streaming'],
 .status[data-status='pending'] {
   color: var(--bd-accent, #7aa2f7);

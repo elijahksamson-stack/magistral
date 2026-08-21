@@ -29,6 +29,20 @@ import type {
 } from './graph';
 import type { LayoutFrame } from './addon';
 
+/**
+ * An image copied into the vault, as the renderer sees it.
+ *
+ * Declared here rather than in `app/main/assets.ts` so the contract layer
+ * stays free of any dependency on main — shared is what main and the renderer
+ * both build against, never the other way round.
+ */
+export interface AttachedImage {
+  /** Stored name. A cell refers to it as `![[fileName]]`. */
+  readonly fileName: string;
+  /** `data:image/png;base64,…`, ready to render without a second round trip. */
+  readonly dataUrl: string;
+}
+
 // ---------------------------------------------------------------------------
 // Vault
 // ---------------------------------------------------------------------------
@@ -141,6 +155,26 @@ export interface IpcInvokeMap {
    * dismissed the dialog — that is not an error.
    */
   'import:document': [void, { document: SourceDocument | null }];
+  /**
+   * Pick a folder and read it as one outlined document.
+   *
+   * Separate from `import:document` rather than a flag on it: the two show
+   * different pickers, and one channel that sometimes opens a file dialog and
+   * sometimes a directory dialog is a channel whose behaviour a caller cannot
+   * read off its name.
+   */
+  'import:folder': [void, { document: SourceDocument | null }];
+
+  /**
+   * Copy an image into the open vault and hand back how to refer to it.
+   *
+   * The vault id travels in the payload rather than being read from main's
+   * idea of what is open: the renderer knows which graph the author is looking
+   * at, and a mismatch would file the image under the wrong vault.
+   */
+  'image:attach': [{ vaultId: string }, { image: AttachedImage | null }];
+  /** Read an attachment back. Null when the file is gone — cells outlive files. */
+  'image:read': [{ vaultId: string; fileName: string }, { dataUrl: string | null }];
 
   // -- claude bridge
   'claude:invoke': [ClaudeInvokeRequest, { accepted: true }];

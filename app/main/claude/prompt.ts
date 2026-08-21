@@ -26,7 +26,7 @@ const MAX_CONTEXT_LABELS = 40;
  */
 export const COMPLETION_OUTPUT_CONTRACT = [
   'Respond with a single JSON object and nothing else — no prose, no code fence.',
-  'Shape: {"newNodes":[{"label":string,"kind":"concept"|"entity"|"claim"|"question"|"source"|"metric","note"?:string,"group"?:string}],',
+  'Shape: {"newNodes":[{"label":string,"kind":"concept"|"entity"|"claim"|"question"|"source"|"metric","note"?:string,"group"?:string,"subConcepts"?:[{"label":string,"note"?:string}]}],',
   '"newEdges":[{"source":string,"target":string,"sourceParent"?:string,"targetParent"?:string,"relation":RelationKind,"note"?:string}],',
   '"edgeChanges":[{"source":string,"target":string,"sourceParent"?:string,"targetParent"?:string,"relation":RelationKind,"note"?:string,"reason"?:string}],',
   '"groupAdditions":[{"node":string,"group":string}],',
@@ -40,6 +40,9 @@ export const COMPLETION_OUTPUT_CONTRACT = [
   'Never put an existing subnode in newNodes. A child without an existing parent-child pair is invalid.',
   'You may NOT rename, delete, or reword an existing concept, and you may NOT delete a relationship.',
   'A label in "newNodes" that already exists in the map will be refused, so do not use it to revise one.',
+  'Use "subConcepts" only when a new concept genuinely arrives with named parts, and give each part its own',
+  'note. Do not invent facets to pad a concept, and never use it for something that deserves to be a concept',
+  'in its own right — a sub-concept is detail recorded beneath its parent, not a node on the canvas.',
   '"edgeChanges" applies only to a pair that is already connected; use "newEdges" for a new connection.',
 ].join(' ');
 
@@ -129,6 +132,26 @@ const DESCRIBE_TASK_LINE = [
   'Return the description only: no preamble, no heading, no bullet list, no quotation marks.',
 ].join(' ');
 
+/*
+ * A folder arrives with the hierarchy already decided. The author made those
+ * directories; inferring a different shape from the prose inside them would
+ * throw away the one piece of structure that is not a guess.
+ *
+ * The wikilink rules do the rest: the FIRST link in a cell names its node and
+ * every later link becomes a sub-concept, so "folder first, one link per
+ * subfolder" is all that is needed for the map to come out right.
+ */
+const FOLDER_STRUCTURE_LINE = [
+  'This is a folder, not a single document. Its shape is the map:',
+  'write [[Folder name]] FIRST, as the very first wikilink, with a short description of what the',
+  'folder is about as a whole. Then write one [[Subfolder name]] link per subfolder, in the order',
+  'given, each followed by a description distilled from the files inside that subfolder — what it',
+  'covers, what it claims, and what it is for.',
+  'Use the subfolder names as written. Do not invent subfolders, do not merge two into one, and do',
+  'not promote a file to a subfolder. A subfolder with no readable documents still gets its link,',
+  'described from its name alone.',
+].join(' ');
+
 const CELL_TASK_LINE: Record<CellAction, string> = {
   enhance: 'Sharpen the passage below. Keep every claim it makes; change only how clearly it lands.',
   continue: "Write the next paragraph, in the author's voice, continuing the passage below.",
@@ -190,8 +213,16 @@ export function buildPrompt({ request, packText, map }: PromptInput): string {
   // An import reads a document rather than the cell: the cell is created empty
   // to receive the result, so there is no passage to act on.
   if (request.action === 'distill-import' && request.sourceDocument) {
-    const { name, text, isTruncated } = request.sourceDocument;
-    parts.push(section('Imported document', `File: ${name}`));
+    const { name, text, isTruncated, isFolder } = request.sourceDocument;
+    // A second "## Task" would compete with the one already pushed above; the
+    // folder rule is an additional constraint on that task, not a new one.
+    if (isFolder) parts.push(section('Structure to preserve', FOLDER_STRUCTURE_LINE));
+    parts.push(
+      section(
+        isFolder ? 'Imported folder' : 'Imported document',
+        `${isFolder ? 'Folder' : 'File'}: ${name}`,
+      ),
+    );
     if (isTruncated) {
       parts.push(
         section(

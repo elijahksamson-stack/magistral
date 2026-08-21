@@ -6,7 +6,6 @@
  * range slices back to the heading it claims — so that is what is tested here.
  */
 
-import { readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,17 +19,6 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KNOWLEDGE_DIR = join(REPO_ROOT, 'resources', 'knowledge');
 const INDEX_PATH = join(KNOWLEDGE_DIR, 'index.json');
 
-/**
- * The public repository ships no research corpus — resources/knowledge holds
- * only _system, the per-action instruction wording. Everything below asserts
- * properties of a SPECIFIC bundled corpus, so with none present there is
- * nothing to assert and these suites skip instead of failing. Supply a corpus
- * and they run again.
- */
-const HAS_CORPUS = readdirSync(KNOWLEDGE_DIR, { withFileTypes: true }).some(
-  (entry) => entry.isDirectory() && entry.name !== '_system',
-);
-
 const EXPECTED_FILE_COUNT = 45;
 const EXPECTED_SECTOR_FILES = 39;
 const EXPECTED_MINDSET_FILES = 5;
@@ -41,11 +29,10 @@ const SECTIONS_PER_SECTOR_MODULE = 13;
 let payload;
 
 beforeAll(async () => {
-  if (!HAS_CORPUS) return;
   payload = await buildIndexPayload(KNOWLEDGE_DIR);
 });
 
-describe.skipIf(!HAS_CORPUS)('corpus coverage', () => {
+describe('corpus coverage', () => {
   it('indexes all 45 bundled files', () => {
     expect(payload.fileCount).toBe(EXPECTED_FILE_COUNT);
   });
@@ -89,7 +76,7 @@ describe.skipIf(!HAS_CORPUS)('corpus coverage', () => {
   });
 });
 
-describe.skipIf(!HAS_CORPUS)('byte ranges', () => {
+describe('byte ranges', () => {
   it('slices back to the exact heading for every single section', async () => {
     const report = await verifyIndex(KNOWLEDGE_DIR, payload);
     expect(report.failures).toEqual([]);
@@ -165,7 +152,7 @@ describe.skipIf(!HAS_CORPUS)('byte ranges', () => {
   });
 });
 
-describe.skipIf(!HAS_CORPUS)('section metadata', () => {
+describe('section metadata', () => {
   it('estimates tokens from the byte range', () => {
     for (const section of payload.sections) {
       expect(section.approxTokens).toBe(Math.ceil((section.byteEnd - section.byteStart) / 4));
@@ -206,7 +193,7 @@ describe.skipIf(!HAS_CORPUS)('section metadata', () => {
   });
 });
 
-describe.skipIf(!HAS_CORPUS)('idempotence', () => {
+describe('idempotence', () => {
   it('produces byte-identical sections on a second build', async () => {
     const second = await buildIndexPayload(KNOWLEDGE_DIR);
     expect(JSON.stringify(second.sections)).toBe(JSON.stringify(payload.sections));
@@ -221,7 +208,7 @@ describe.skipIf(!HAS_CORPUS)('idempotence', () => {
   });
 });
 
-describe.skipIf(!HAS_CORPUS)('path classification', () => {
+describe('path classification', () => {
   it.each([
     ['sectors/Technology/Semiconductors.md', 'sector', 'Technology', 'Semiconductors'],
     ['mindset/01_Seeing_Clearly.md', 'mindset', undefined, 'Seeing Clearly'],

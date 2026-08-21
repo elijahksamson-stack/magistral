@@ -82,7 +82,7 @@ std::string noteOf(const Graph& graph, const std::string& label) {
 
 }  // namespace
 
-TEST_CASE("a sub-concept carries the line it was written on") {
+TEST_CASE("a sub-concept carries what follows it, up to the next link") {
   Graph graph("notes");
   graph.syncCell(
       "c1",
@@ -93,11 +93,53 @@ TEST_CASE("a sub-concept carries the line it was written on") {
   CHECK(graph.nodeCount() == 1);
   CHECK(subNoteOf(graph, "grid-energy prices", "Data center power demand") ==
         "is doubling roughly every two years.");
-  // The link mid-sentence keeps the whole line, since the line is the claim.
-  CHECK(subNoteOf(graph, "grid-energy prices", "heat rate") ==
-        "A gas plant's cost is defined by its heat rate (MMBtu per MWh).");
-  // The naming link's line describes the node itself.
+  // Only what follows the link. The clause AHEAD of it on its own line
+  // introduces the line, and belongs to no concept's description.
+  CHECK(subNoteOf(graph, "grid-energy prices", "heat rate") == "(MMBtu per MWh).");
+  // The naming link describes the node itself.
   CHECK(noteOf(graph, "grid-energy prices") == "primer for founders.");
+}
+
+TEST_CASE("each link in one paragraph gets its own sentence, not the paragraph") {
+  Graph graph("shared paragraph");
+  graph.syncCell(
+      "c1",
+      "[[Sports]]\n\n"
+      "[[Basketball]] scores by shot distance. [[Volleyball]] keeps its rotations "
+      "constant. [[Baseball]] paces itself over 9 innings.");
+
+  // Nothing sits between the node and the first sub-concept.
+  CHECK(noteOf(graph, "Sports").empty());
+  CHECK(subNoteOf(graph, "Sports", "Basketball") == "scores by shot distance.");
+  CHECK(subNoteOf(graph, "Sports", "Volleyball") == "keeps its rotations constant.");
+  CHECK(subNoteOf(graph, "Sports", "Baseball") == "paces itself over 9 innings.");
+}
+
+TEST_CASE("links on one line each own the text up to the next one") {
+  Graph graph("conversation");
+  graph.syncCell(
+      "c1",
+      "[[Greeting]] hi how are you [[Response]] good and you? "
+      "[[Final Response]] Kinda tired, ready for bed.");
+
+  CHECK(noteOf(graph, "Greeting") == "hi how are you");
+  CHECK(subNoteOf(graph, "Greeting", "Response") == "good and you?");
+  CHECK(subNoteOf(graph, "Greeting", "Final Response") == "Kinda tired, ready for bed.");
+}
+
+TEST_CASE("a link alone on its line owns the prose beneath it") {
+  Graph graph("sections");
+  graph.syncCell(
+      "c1",
+      "## [[Direct Versus Embedded Demand]]\n\n"
+      "Demand reaches materials through two channels.\n"
+      "* Concrete\n\n"
+      "## [[Next Concept]]\n");
+
+  // The heading marks of the FOLLOWING link are not swallowed into this one.
+  CHECK(noteOf(graph, "Direct Versus Embedded Demand") ==
+        "Demand reaches materials through two channels.\n* Concrete");
+  CHECK(subNoteOf(graph, "Direct Versus Embedded Demand", "Next Concept").empty());
 }
 
 TEST_CASE("a sub-concept with nothing else on its line carries no note") {
@@ -106,19 +148,21 @@ TEST_CASE("a sub-concept with nothing else on its line carries no note") {
   CHECK(subNoteOf(graph, "Alpha", "Beta").empty());
 }
 
-TEST_CASE("notes read as prose, not markdown") {
+TEST_CASE("emphasis wrapping a link is trimmed, emphasis inside it is kept") {
   Graph graph("flatten");
   graph.syncCell("c1", "[[Root]] head\n- **[[Bold Concept]]** matters `a lot` here\n");
-  const std::string note = subNoteOf(graph, "Root", "Bold Concept");
-  CHECK(note.find('*') == std::string::npos);
-  CHECK(note.find('`') == std::string::npos);
-  CHECK(note == "matters a lot here");
+  // The "** " closing the bolded link is a separator, not description. What the
+  // author wrote AFTER it survives verbatim, so the panel can write it back
+  // unchanged rather than quietly stripping their markdown.
+  CHECK(subNoteOf(graph, "Root", "Bold Concept") == "matters `a lot` here");
 }
 
-TEST_CASE("a piped link's note shows the display text a reader would see") {
+TEST_CASE("a piped link's note is what follows it, not its display text") {
   Graph graph("piped note");
   graph.syncCell("c1", "[[Root]] head\n- [[Binding Constraint|the constraint]] sets the pace\n");
-  CHECK(subNoteOf(graph, "Root", "Binding Constraint") == "the constraint sets the pace");
+  // The label is already the heading of the panel; repeating it as the first
+  // words of its own description said the same thing twice.
+  CHECK(subNoteOf(graph, "Root", "Binding Constraint") == "sets the pace");
 }
 
 TEST_CASE("one cell produces one node — the first link names it") {
@@ -216,6 +260,24 @@ TEST_CASE("syncCell survives malformed bracket sequences") {
   CHECK(labelsOf(graph) == std::vector<std::string>{"!!"});
   CHECK(report.createdNodeIds.size() == 1);
   CHECK(subConceptsOf(graph, "!!") == std::vector<std::string>{"Good"});
+}
+
+TEST_CASE("an embedded file is not a concept") {
+  Graph graph("embeds");
+  graph.syncCell("c1", "[[Turbine Efficiency]] rises with inlet temperature.\n\n![[curve.png]]\n");
+
+  // Without this, every image an author dropped into a cell became a node
+  // named after its filename.
+  CHECK(labelsOf(graph) == std::vector<std::string>{"Turbine Efficiency"});
+  CHECK(subConceptsOf(graph, "Turbine Efficiency").empty());
+}
+
+TEST_CASE("an embed mid-sentence does not break the link around it") {
+  Graph graph("embeds inline");
+  graph.syncCell("c1", "[[Alpha]] see ![[chart.png]] then [[Beta]] follows.");
+
+  CHECK(labelsOf(graph) == std::vector<std::string>{"Alpha"});
+  CHECK(subConceptsOf(graph, "Alpha") == std::vector<std::string>{"Beta"});
 }
 
 TEST_CASE("syncCell takes the innermost link when brackets nest") {
